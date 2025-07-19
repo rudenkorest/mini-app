@@ -22,26 +22,27 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
   });
   const [userLocation, setUserLocation] = useState(null);
 
-  // Автоматичне визначення місця користувача через Telegram LocationManager
+  // Визначення місця користувача через стандартний браузерний API
   useEffect(() => {
-    if (window.Telegram?.WebApp?.LocationManager?.requestLocation) {
-      window.Telegram.WebApp.LocationManager.requestLocation()
-        .then(location => {
-          if (location && location.latitude && location.longitude) {
-            setViewport(v => ({
-              ...v,
-              latitude: location.latitude,
-              longitude: location.longitude,
-              zoom: 15,
-              transitionDuration: 1000,
-            }));
-            setUserLocation({
-              latitude: location.latitude,
-              longitude: location.longitude,
-            });
-          }
-        })
-        .catch(() => {});
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setViewport(v => ({
+            ...v,
+            longitude: pos.coords.longitude,
+            latitude: pos.coords.latitude,
+            zoom: 15,
+            transitionDuration: 1000,
+          }));
+          setUserLocation({
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+          });
+        },
+        (err) => {
+          // Користувач відмовив або сталася помилка
+        }
+      );
     }
   }, []);
 
