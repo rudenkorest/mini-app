@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Input,
   Button,
@@ -20,6 +20,30 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
     width: '100%',
     height: '100%',
   });
+  const [userLocation, setUserLocation] = useState(null);
+
+  // Автоматичне визначення місця користувача через Telegram LocationManager
+  useEffect(() => {
+    if (window.Telegram?.WebApp?.LocationManager?.requestLocation) {
+      window.Telegram.WebApp.LocationManager.requestLocation()
+        .then(location => {
+          if (location && location.latitude && location.longitude) {
+            setViewport(v => ({
+              ...v,
+              latitude: location.latitude,
+              longitude: location.longitude,
+              zoom: 15,
+              transitionDuration: 1000,
+            }));
+            setUserLocation({
+              latitude: location.latitude,
+              longitude: location.longitude,
+            });
+          }
+        })
+        .catch(() => {});
+    }
+  }, []);
 
   // Функції для зміни масштабу
   const handleZoomIn = () => setViewport(v => ({ ...v, zoom: v.zoom + 1 }));
@@ -65,6 +89,26 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
         mapboxApiAccessToken={import.meta.env.VITE_MAPBOX_TOKEN}
         onViewportChange={setViewport}
       >
+        {/* Маркер користувача (синя точка) */}
+        {userLocation && (
+          <Marker
+            longitude={userLocation.longitude}
+            latitude={userLocation.latitude}
+            offsetLeft={-12}
+            offsetTop={-12}
+          >
+            <div
+              style={{
+                width: 24,
+                height: 24,
+                borderRadius: '50%',
+                background: 'rgba(0, 120, 255, 0.7)',
+                border: '2px solid #fff',
+                boxShadow: '0 0 8px 2px rgba(0,120,255,0.5)'
+              }}
+            />
+          </Marker>
+        )}
         <Marker longitude={30.5234} latitude={50.4501} offsetLeft={-24} offsetTop={-48}>
           <div onClick={onMarkerClick} style={{cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8}}>
             <Avatar
