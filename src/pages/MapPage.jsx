@@ -14,6 +14,7 @@ import ReactMapGL, { Marker, Popup } from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import Supercluster from 'supercluster';
 import { useRef } from 'react';
+import { supabase } from '@/lib/supabase';
 
 function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
   const [viewport, setViewport] = useState({
@@ -35,6 +36,8 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
   const [locationError, setLocationError] = useState(null);
   const mapRef = useRef();
   const [isMobile, setIsMobile] = useState(false);
+  const [locations, setLocations] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Визначаємо, чи це мобільний пристрій
   useEffect(() => {
@@ -46,6 +49,33 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
     
     checkMobile();
   }, []);
+
+  // Завантажуємо локації з Supabase
+  useEffect(() => {
+    fetchLocations();
+  }, []);
+
+  const fetchLocations = async () => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('locations')
+        .select('*')
+        .eq('is_active', true);
+
+      if (error) {
+        console.error('Помилка завантаження локацій:', error);
+        setLocations([]); // Якщо помилка - показуємо пусту карту
+      } else {
+        setLocations(data || []);
+      }
+    } catch (error) {
+      console.error('Помилка при завантаженні локацій:', error);
+      setLocations([]); // При будь-якій помилці - показуємо пусту карту
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Визначення місця користувача через Telegram API або стандартний браузерний API
   useEffect(() => {
@@ -122,24 +152,21 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
     }
   };
 
-  // Масив маркерів у форматі GeoJSON
-  const points = [
-    {
-      type: "Feature",
-      properties: { id: 1, title: "Kyiv Food Market", avatar: "https://i.ibb.co/gFc2zJYp/photo-2025-07-18-19-04-34.jpg" },
-      geometry: { type: "Point", coordinates: [30.5234, 50.4501] }
+  // Конвертуємо локації у формат GeoJSON для supercluster
+  const points = locations.map(location => ({
+    type: "Feature",
+    properties: { 
+      id: location.id, 
+      title: location.title, 
+      avatar: location.avatar,
+      description: location.description,
+      address: location.address
     },
-    {
-      type: "Feature",
-      properties: { id: 2, title: "Ibiza", avatar: "https://i.ibb.co/gFc2zJYp/photo-2025-07-18-19-04-34.jpg" },
-      geometry: { type: "Point", coordinates: [30.5234, 50.4541] }
-    },
-    {
-      type: "Feature",
-      properties: { id: 3, title: "Pizza Spot", avatar: "https://i.ibb.co/gFc2zJYp/photo-2025-07-18-19-04-34.jpg" },
-      geometry: { type: "Point", coordinates: [30.5264, 50.4521] }
+    geometry: { 
+      type: "Point", 
+      coordinates: [location.longitude, location.latitude] 
     }
-  ];
+  }));
 
   // ініціалізація supercluster
   const supercluster = new Supercluster({ radius: 40, maxZoom: 18 });
@@ -269,7 +296,7 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
         scrollZoom={{ speed: 0.3, smooth: true }} // Зменшуємо швидкість зуму колесом
       >
         {/* Кластери та маркери */}
-        {clusters.map(cluster => {
+        {!isLoading && clusters.map(cluster => {
           const [longitude, latitude] = cluster.geometry.coordinates;
           // Якщо це кластер
           if (cluster.properties.cluster) {
@@ -300,7 +327,7 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
           // Якщо це окремий маркер
           return (
             <Marker key={`marker-${cluster.properties.id}`} longitude={longitude} latitude={latitude} offsetLeft={-24} offsetTop={-48}>
-              <div onClick={onMarkerClick} style={{cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8}}>
+              <div onClick={() => onMarkerClick(cluster.properties)} style={{cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8}}>
                 <Avatar
                   src={cluster.properties.avatar}
                   alt={cluster.properties.title}
@@ -332,6 +359,21 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
           </Marker>
         )}
       </ReactMapGL>
+      {/* Індикатор завантаження */}
+      {isLoading && (
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+          padding: 20,
+          borderRadius: 12,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+        }}>
+          <Caption weight="1">Завантаження локацій...</Caption>
+        </div>
+      )}
       {/* Banner поверх карти */}
       {showBanner && (
         <div style={{position: 'absolute', bottom: 25, right: 20, zIndex: 10, width: '90%', maxWidth: '90%'}}>
@@ -383,11 +425,22 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
 export function MapPage() {
   const [showBanner, setShowBanner] = useState(true);
   const [showTonBanner, setShowTonBanner] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState(null);
+  
+  const handleMarkerClick = (locationData) => {
+    setSelectedLocation(locationData);
+    setShowTonBanner(true);
+  };
+  
   return (
     <Page back={false}>
       <div style={{height: '100vh', background: '#181818', padding: 0, position: 'relative'}}>
-        <MapStub showBanner={showBanner} onCloseBanner={() => setShowBanner(false)} onMarkerClick={() => setShowTonBanner(true)} />
-        {showTonBanner && (
+        <MapStub 
+          showBanner={showBanner} 
+          onCloseBanner={() => setShowBanner(false)} 
+          onMarkerClick={handleMarkerClick} 
+        />
+        {showTonBanner && selectedLocation && (
           <div style={{
             position: 'absolute',
             left: 0,
@@ -401,11 +454,11 @@ export function MapPage() {
           }}>
             <div style={{width: '100%', maxWidth: '100%', pointerEvents: 'auto'}}>
               <Banner
-                before={<Image size={48} src="https://i.ibb.co/gFc2zJYp/photo-2025-07-18-19-04-34.jpg" />}
-                callout="Київ, вул. Васильківська 38"
-                background={<img alt="Nasa streams" src="https://royaldesign.ua/file/495/cc/ts/PT/filename_thumbnail.G7vG.jpg" style={{width: '100%', height: '100%', opacity: 0.5, objectFit: "cover"}}/>}
-                header="Kyiv Food Market"
-                subheader="Київський ринок їжі, простір з ресторанами і барами"
+                before={<Image size={48} src={selectedLocation.avatar} />}
+                callout={selectedLocation.address || "Київ"}
+                background={<img alt="Location background" src={selectedLocation.avatar} style={{width: '100%', height: '100%', opacity: 0.5, objectFit: "cover"}}/>}
+                header={selectedLocation.title}
+                subheader={selectedLocation.description || "Опис локації"}
                 type="section"
                 onCloseIcon={() => setShowTonBanner(false)}
               >
