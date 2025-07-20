@@ -24,13 +24,56 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
     height: '100%',
   });
   const [userLocation, setUserLocation] = useState(null);
+  const [locationError, setLocationError] = useState(null);
   const mapRef = useRef();
 
-  // Визначення місця користувача через стандартний браузерний API
+  // Визначення місця користувача через Telegram API або стандартний браузерний API
   useEffect(() => {
+    // Спробуємо використати Telegram LocationManager API
+    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.LocationManager) {
+      console.log("Використовуємо Telegram LocationManager API");
+      
+      try {
+        window.Telegram.WebApp.LocationManager.requestLocation({
+          onSuccess: (location) => {
+            console.log("Telegram геолокація успішна:", location);
+            setViewport(v => ({
+              ...v,
+              longitude: location.longitude,
+              latitude: location.latitude,
+              zoom: 15,
+              transitionDuration: 1000,
+            }));
+            setUserLocation({
+              latitude: location.latitude,
+              longitude: location.longitude,
+            });
+          },
+          onError: (error) => {
+            console.error("Помилка Telegram геолокації:", error);
+            setLocationError("Помилка Telegram геолокації: " + error);
+            // Спробуємо використати стандартний браузерний API як резервний варіант
+            useBrowserGeolocation();
+          }
+        });
+      } catch (e) {
+        console.error("Виняток при використанні Telegram LocationManager:", e);
+        // Спробуємо використати стандартний браузерний API як резервний варіант
+        useBrowserGeolocation();
+      }
+    } else {
+      // Якщо Telegram API недоступний, використовуємо стандартний браузерний API
+      console.log("Telegram LocationManager недоступний, використовуємо браузерний API");
+      useBrowserGeolocation();
+    }
+  }, []);
+
+  // Функція для використання стандартного браузерного API геолокації
+  const useBrowserGeolocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
+          console.log("Браузерна геолокація успішна:", pos.coords);
           setViewport(v => ({
             ...v,
             longitude: pos.coords.longitude,
@@ -44,11 +87,20 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
           });
         },
         (err) => {
-          // Користувач відмовив або сталася помилка
+          console.error("Помилка браузерної геолокації:", err);
+          setLocationError("Не вдалося отримати геолокацію: " + err.message);
+        },
+        { 
+          enableHighAccuracy: true, 
+          timeout: 10000, 
+          maximumAge: 0 
         }
       );
+    } else {
+      console.error("Геолокація не підтримується браузером");
+      setLocationError("Геолокація не підтримується вашим браузером");
     }
-  }, []);
+  };
 
   // Масив маркерів у форматі GeoJSON
   const points = [
@@ -89,6 +141,43 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
 
   // Функція для переходу до геолокації користувача
   const handleGeolocate = () => {
+    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.LocationManager) {
+      try {
+        window.Telegram.WebApp.LocationManager.requestLocation({
+          onSuccess: (location) => {
+            setViewport(v => ({
+              ...v,
+              longitude: location.longitude,
+              latitude: location.latitude,
+              zoom: 15,
+              transitionDuration: 1000,
+              width: v.width,
+              height: v.height,
+            }));
+            setUserLocation({
+              latitude: location.latitude,
+              longitude: location.longitude,
+            });
+          },
+          onError: (error) => {
+            console.error("Помилка Telegram геолокації:", error);
+            // Спробуємо використати стандартний браузерний API як резервний варіант
+            useBrowserGeolocationForButton();
+          }
+        });
+      } catch (e) {
+        console.error("Виняток при використанні Telegram LocationManager:", e);
+        // Спробуємо використати стандартний браузерний API як резервний варіант
+        useBrowserGeolocationForButton();
+      }
+    } else {
+      // Якщо Telegram API недоступний, використовуємо стандартний браузерний API
+      useBrowserGeolocationForButton();
+    }
+  };
+
+  // Функція для використання стандартного браузерного API геолокації при натисканні на кнопку
+  const useBrowserGeolocationForButton = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
@@ -97,13 +186,22 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
             longitude: pos.coords.longitude,
             latitude: pos.coords.latitude,
             zoom: 15,
-            transitionDuration: 1000, // плавна анімація
+            transitionDuration: 1000,
             width: v.width,
             height: v.height,
           }));
+          setUserLocation({
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+          });
         },
         (err) => {
           alert('Не вдалося отримати геолокацію: ' + err.message);
+        },
+        { 
+          enableHighAccuracy: true, 
+          timeout: 10000, 
+          maximumAge: 0 
         }
       );
     } else {
@@ -135,9 +233,25 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
           if (cluster.properties.cluster) {
             return (
               <Marker key={`cluster-${cluster.id}`} longitude={longitude} latitude={latitude} offsetLeft={-20} offsetTop={-20}>
-                <Badge large mode="primary" type="number">
+                <div
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: '50%',
+                    background: 'rgba(0, 120, 255, 0.7)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#fff',
+                    fontFamily: "'Helvetica Neue', sans-serif",
+                    fontWeight: 500,
+                    fontSize: 16,
+                    border: '2px solid #fff',
+                    boxShadow: '0 0 8px 2px rgba(0,120,255,0.5)'
+                  }}
+                >
                   {cluster.properties.point_count}
-                </Badge>
+                </div>
               </Marker>
             );
           }
@@ -168,7 +282,7 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
                 width: 18,
                 height: 18,
                 borderRadius: '50%',
-                background: 'rgba(0, 120, 255, 0.7)',
+                background: 'rgba(0, 120, 255, 1)',
                 border: '2px solid #fff',
                 boxShadow: '0 0 8px 2px rgba(0,120,255,0.5)'
               }}
@@ -201,6 +315,25 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
         <Button shape="circle" size="m" onClick={handleZoomOut}>-</Button>
         <Button shape="circle" size="m" onClick={handleGeolocate}>→</Button>
       </div>
+      {/* Повідомлення про помилку геолокації */}
+      {locationError && (
+        <div style={{
+          position: 'absolute', 
+          bottom: 70, 
+          left: '50%', 
+          transform: 'translateX(-50%)',
+          backgroundColor: 'rgba(255, 255, 255, 0.8)',
+          padding: '8px 12px',
+          borderRadius: 8,
+          maxWidth: '80%',
+          textAlign: 'center',
+          zIndex: 10,
+          fontSize: 14,
+          color: '#ff3b30'
+        }}>
+          {locationError}
+        </div>
+      )}
     </div>
   );
 }
@@ -235,8 +368,11 @@ export function MapPage() {
                 onCloseIcon={() => setShowTonBanner(false)}
               >
                 <Button
+                  Component="a"
+                  href="https://nohello.net/en/"
                   mode="white"
                   size="s"
+                  target="_blank"
                 >
                   Детальніше
                 </Button>
