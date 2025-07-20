@@ -227,7 +227,8 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
       title: location.title, 
       avatar: location.avatar,
       description: location.description,
-      address: location.address
+      address: location.address,
+      link: location.link // Додаємо посилання з бази даних
     },
     geometry: { 
       type: "Point", 
@@ -623,14 +624,23 @@ userID: ${user?.id || 'відсутній'}`);
   const handleDetailsClick = async (e) => {
     e.preventDefault();
     
-    // Debug: перевіряємо чи спрацьовує функція взагалі
-    alert('Debug: Кнопка "Детальніше" натиснута!');
+    // Діагностика selectedLocation
+    console.log('🎯 selectedLocation:', selectedLocation);
+    alert(`Debug: selectedLocation має link: "${selectedLocation?.link || 'ВІДСУТНІЙ'}"`);
     
     const isSubscribed = await checkChannelSubscription();
     
     if (isSubscribed) {
       // Якщо підписаний - відкриваємо посилання
-      window.open(selectedLocation.link || 'https://nohello.net/en/', '_blank');
+      const linkToOpen = selectedLocation.link || 'https://nohello.net/en/';
+      
+      // Використовуємо Telegram API для відкриття посилань на мобільних
+      if (window.Telegram?.WebApp?.openLink) {
+        window.Telegram.WebApp.openLink(linkToOpen);
+      } else {
+        // Резервний варіант для Desktop
+        window.open(linkToOpen, '_blank');
+      }
     } else {
       // Якщо не підписаний - показуємо попап
       setShowSubscribeModal(true);
@@ -647,7 +657,12 @@ userID: ${user?.id || 'відсутній'}`);
       // Повторна перевірка після підписки
       checkChannelSubscription().then(isSubscribed => {
         if (isSubscribed) {
-          window.open(selectedLocation?.link || 'https://nohello.net/en/', '_blank');
+          const linkToOpen = selectedLocation?.link || 'https://nohello.net/en/';
+          if (window.Telegram?.WebApp?.openLink) {
+            window.Telegram.WebApp.openLink(linkToOpen);
+          } else {
+            window.open(linkToOpen, '_blank');
+          }
         }
       });
     }, 3000);
