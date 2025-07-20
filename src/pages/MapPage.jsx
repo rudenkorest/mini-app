@@ -545,26 +545,18 @@ export function MapPage() {
       console.log('🔍 Telegram WebApp data:', tg);
       console.log('👤 User data:', user);
       
-      // Детальна діагностика
-      alert(`Debug: 
-Telegram: ${!!window.Telegram}
-WebApp: ${!!window.Telegram?.WebApp}
-initDataUnsafe: ${!!tg?.initDataUnsafe}
-user: ${!!user}
-userID: ${user?.id || 'відсутній'}`);
-      
       if (!window.Telegram) {
-        alert('Debug: Telegram API не знайдено! Відкрийте через Telegram.');
+        console.error('Telegram API не знайдено! Відкрийте через Telegram.');
         return false;
       }
       
       if (!tg) {
-        alert('Debug: WebApp не ініціалізовано! Налаштуйте Menu Button в BotFather.');
+        console.error('WebApp не ініціалізовано! Налаштуйте Menu Button в BotFather.');
         return false;
       }
       
       if (!tg.initDataUnsafe) {
-        alert('Debug: initDataUnsafe відсутній! Mini App запущено не через бота.');
+        console.error('initDataUnsafe відсутній! Mini App запущено не через бота.');
         return false;
       }
       
@@ -580,8 +572,6 @@ userID: ${user?.id || 'відсутній'}`);
         channel: TELEGRAM_CHANNEL,
         initData: tg.initData ? 'present' : 'missing'
       });
-      
-      alert(`Debug: Відправляю запит до API...`);
       
       const response = await fetch(`${BACKEND_URL}/api/check-subscription`, {
         method: 'POST',
@@ -606,14 +596,10 @@ userID: ${user?.id || 'відсутній'}`);
       const data = await response.json();
       console.log('✅ Відповідь API:', data);
       
-      // Тимчасово для мобільного налагодження - завжди показуємо
-      alert(`Debug: API Response: isSubscribed=${data.isSubscribed}, status=${data.status}`);
-      
       return data.isSubscribed;
       
     } catch (error) {
       console.error('Помилка перевірки підписки:', error);
-      alert(`Debug: ПОМИЛКА! ${error.message}`);
       return false;
     } finally {
       setIsCheckingSubscription(false);
@@ -623,10 +609,6 @@ userID: ${user?.id || 'відсутній'}`);
   // Обробник кліку на кнопку "Детальніше"
   const handleDetailsClick = async (e) => {
     e.preventDefault();
-    
-    // Діагностика selectedLocation
-    console.log('🎯 selectedLocation:', selectedLocation);
-    alert(`Debug: selectedLocation має link: "${selectedLocation?.link || 'ВІДСУТНІЙ'}"`);
     
     const isSubscribed = await checkChannelSubscription();
     
