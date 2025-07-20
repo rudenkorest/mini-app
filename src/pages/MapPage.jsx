@@ -42,6 +42,70 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
   const [locations, setLocations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Ініціалізація Telegram WebApp
+  useEffect(() => {
+    console.log('🚀 Початок ініціалізації Telegram WebApp...');
+    
+    // Примусова ініціалізація Telegram WebApp
+    if (window.Telegram) {
+      console.log('✅ Telegram API знайдено');
+      console.log('Telegram object keys:', Object.keys(window.Telegram || {}));
+      
+      // Спробуємо примусово створити WebApp
+      if (!window.Telegram.WebApp) {
+        console.log('⚠️ WebApp відсутній, спробуємо створити...');
+        
+        // Спробуємо різні методи ініціалізації
+        if (window.TelegramWebviewProxy) {
+          console.log('Використовуємо TelegramWebviewProxy...');
+          window.TelegramWebviewProxy.postEvent('web_app_ready', false, {});
+        }
+        
+        // Спробуємо створити WebApp вручну
+        if (window.Telegram && !window.Telegram.WebApp) {
+          console.log('Спробуємо створити WebApp об\'єкт...');
+          // Деякі версії потребують явного створення
+          try {
+            window.Telegram.WebApp = window.Telegram.WebApp || {};
+          } catch (e) {
+            console.error('Помилка створення WebApp:', e);
+          }
+        }
+      }
+      
+      // Додаткова діагностика через 1 секунду
+      setTimeout(() => {
+        console.log('📊 Діагностика після ініціалізації:');
+        console.log('Telegram object keys:', Object.keys(window.Telegram || {}));
+        console.log('WebApp після ініціалізації:', !!window.Telegram?.WebApp);
+        console.log('WebApp object:', window.Telegram?.WebApp);
+        
+        if (window.Telegram?.WebApp) {
+          const wa = window.Telegram.WebApp;
+          console.log('✅ WebApp знайдено!');
+          console.log('WebApp version:', wa.version);
+          console.log('WebApp platform:', wa.platform);
+          console.log('WebApp initData:', wa.initData);
+          console.log('WebApp initDataUnsafe:', wa.initDataUnsafe);
+          
+          // Ініціалізуємо WebApp
+          try {
+            wa.ready();
+            wa.expand();
+            console.log('✅ WebApp готовий і розгорнутий');
+          } catch (e) {
+            console.error('Помилка ініціалізації WebApp:', e);
+          }
+        } else {
+          console.error('❌ WebApp все ще відсутній після спроб ініціалізації');
+        }
+      }, 1000);
+      
+    } else {
+      console.error('❌ Telegram API взагалі не знайдено');
+    }
+  }, []);
+
   // Визначаємо, чи це мобільний пристрій
   useEffect(() => {
     const checkMobile = () => {
@@ -434,10 +498,26 @@ export function MapPage() {
   
   // Ініціалізація Telegram WebApp
   useEffect(() => {
-    if (window.Telegram?.WebApp) {
-      window.Telegram.WebApp.ready();
-      console.log('Telegram WebApp готовий:', window.Telegram.WebApp);
-    }
+    // Чекаємо поки Telegram завантажиться
+    const initTelegram = () => {
+      if (window.Telegram) {
+        // Створюємо WebApp якщо його немає
+        if (!window.Telegram.WebApp) {
+          window.Telegram.WebApp = window.Telegram.WebApp || {};
+        }
+        
+        if (window.Telegram.WebApp && window.Telegram.WebApp.ready) {
+          window.Telegram.WebApp.ready();
+          console.log('Telegram WebApp готовий:', window.Telegram.WebApp);
+        }
+      }
+    };
+    
+    // Спробуємо зараз
+    initTelegram();
+    
+    // І через невеликий час
+    setTimeout(initTelegram, 1000);
   }, []);
   
   // Канал, на який потрібно підписатися
@@ -472,13 +552,18 @@ initDataUnsafe: ${!!tg?.initDataUnsafe}
 user: ${!!user}
 userID: ${user?.id || 'відсутній'}`);
       
+      if (!window.Telegram) {
+        alert('Debug: Telegram API не знайдено! Відкрийте через Telegram.');
+        return false;
+      }
+      
       if (!tg) {
-        alert('Debug: Telegram WebApp не знайдено! Відкрийте через Telegram.');
+        alert('Debug: WebApp не ініціалізовано! Налаштуйте Menu Button в BotFather.');
         return false;
       }
       
       if (!tg.initDataUnsafe) {
-        alert('Debug: initDataUnsafe відсутній! Перезапустіть Mini App.');
+        alert('Debug: initDataUnsafe відсутній! Mini App запущено не через бота.');
         return false;
       }
       
