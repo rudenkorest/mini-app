@@ -22,10 +22,30 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
     zoom: 12,
     width: '100%',
     height: '100%',
+    // Додаємо параметри для покращення мобільного досвіду
+    dragPan: true,
+    dragRotate: false,
+    scrollZoom: true,
+    touchZoom: true,
+    touchRotate: false,
+    keyboard: false,
+    doubleClickZoom: true,
   });
   const [userLocation, setUserLocation] = useState(null);
   const [locationError, setLocationError] = useState(null);
   const mapRef = useRef();
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Визначаємо, чи це мобільний пристрій
+  useEffect(() => {
+    const checkMobile = () => {
+      const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+      const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
+      setIsMobile(isMobileDevice);
+    };
+    
+    checkMobile();
+  }, []);
 
   // Визначення місця користувача через Telegram API або стандартний браузерний API
   useEffect(() => {
@@ -136,8 +156,8 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
   }
 
   // Функції для зміни масштабу
-  const handleZoomIn = () => setViewport(v => ({ ...v, zoom: v.zoom + 1 }));
-  const handleZoomOut = () => setViewport(v => ({ ...v, zoom: v.zoom - 1 }));
+  const handleZoomIn = () => setViewport(v => ({ ...v, zoom: Math.min(v.zoom + 1, 18) }));
+  const handleZoomOut = () => setViewport(v => ({ ...v, zoom: Math.max(v.zoom - 1, 10) }));
 
   // Функція для переходу до геолокації користувача
   const handleGeolocate = () => {
@@ -209,13 +229,29 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
     }
   };
 
+  // Обробник зміни viewport, що запобігає випадковим стрибкам
+  const handleViewportChange = (newViewport) => {
+    // Обмежуємо максимальний і мінімальний зум для запобігання надмірного наближення/віддалення
+    const constrainedZoom = Math.min(Math.max(newViewport.zoom, 10), 18);
+    
+    // Обмежуємо швидкість зміни viewport для плавності
+    const transitionDuration = 
+      Math.abs(newViewport.zoom - viewport.zoom) > 2 ? 300 : 0;
+    
+    setViewport({
+      ...newViewport,
+      zoom: constrainedZoom,
+      transitionDuration,
+    });
+  };
+
   return (
     <div style={{
       width: '100%',
       height: '100%',
-      // borderRadius: 16, // видалено, щоб не обрізати карту
       overflow: 'hidden',
       position: 'relative',
+      touchAction: isMobile ? 'pan-x pan-y' : 'auto', // Покращує поведінку на дотикових екранах
     }}>
       <ReactMapGL
         ref={mapRef}
@@ -224,7 +260,13 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
         height="100%"
         mapStyle="mapbox://styles/mapbox/streets-v11"
         mapboxApiAccessToken={import.meta.env.VITE_MAPBOX_TOKEN}
-        onViewportChange={setViewport}
+        onViewportChange={handleViewportChange}
+        dragRotate={false} // Вимикаємо обертання для спрощення взаємодії
+        touchZoom={true} // Дозволяємо зум на дотикових екранах
+        touchAction="pan-x pan-y" // Покращує поведінку на дотикових екранах
+        minZoom={10} // Обмежуємо мінімальний зум
+        maxZoom={18} // Обмежуємо максимальний зум
+        scrollZoom={{ speed: 0.3, smooth: true }} // Зменшуємо швидкість зуму колесом
       >
         {/* Кластери та маркери */}
         {clusters.map(cluster => {
@@ -315,8 +357,8 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
         <Button shape="circle" size="m" onClick={handleZoomOut}>-</Button>
         <Button shape="circle" size="m" onClick={handleGeolocate}>→</Button>
       </div>
-      {/* Повідомлення про помилку геолокації */}
-      {locationError && (
+      {/* Повідомлення про помилку геолокації - закоментовано, оскільки в Telegram працює нормально */}
+      {/* {locationError && (
         <div style={{
           position: 'absolute', 
           bottom: 70, 
@@ -333,7 +375,7 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
         }}>
           {locationError}
         </div>
-      )}
+      )} */}
     </div>
   );
 }
