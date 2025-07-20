@@ -432,6 +432,14 @@ export function MapPage() {
   const [showSubscribeModal, setShowSubscribeModal] = useState(false);
   const [isCheckingSubscription, setIsCheckingSubscription] = useState(false);
   
+  // Ініціалізація Telegram WebApp
+  useEffect(() => {
+    if (window.Telegram?.WebApp) {
+      window.Telegram.WebApp.ready();
+      console.log('Telegram WebApp готовий:', window.Telegram.WebApp);
+    }
+  }, []);
+  
   // Канал, на який потрібно підписатися
   const TELEGRAM_CHANNEL = '-1001968388006'; // Chat ID вашого приватного каналу
   const TELEGRAM_CHANNEL_URL = 'https://t.me/+8Bui7KD5WrJiZjli'; // Замініть на invite link вашого каналу
@@ -456,6 +464,24 @@ export function MapPage() {
       console.log('🔍 Telegram WebApp data:', tg);
       console.log('👤 User data:', user);
       
+      // Детальна діагностика
+      alert(`Debug: 
+Telegram: ${!!window.Telegram}
+WebApp: ${!!window.Telegram?.WebApp}
+initDataUnsafe: ${!!tg?.initDataUnsafe}
+user: ${!!user}
+userID: ${user?.id || 'відсутній'}`);
+      
+      if (!tg) {
+        alert('Debug: Telegram WebApp не знайдено! Відкрийте через Telegram.');
+        return false;
+      }
+      
+      if (!tg.initDataUnsafe) {
+        alert('Debug: initDataUnsafe відсутній! Перезапустіть Mini App.');
+        return false;
+      }
+      
       if (!user) {
         console.error('Не вдалося отримати дані користувача');
         return false;
@@ -468,6 +494,8 @@ export function MapPage() {
         channel: TELEGRAM_CHANNEL,
         initData: tg.initData ? 'present' : 'missing'
       });
+      
+      alert(`Debug: Відправляю запит до API...`);
       
       const response = await fetch(`${BACKEND_URL}/api/check-subscription`, {
         method: 'POST',
@@ -491,10 +519,15 @@ export function MapPage() {
       
       const data = await response.json();
       console.log('✅ Відповідь API:', data);
+      
+      // Тимчасово для мобільного налагодження - завжди показуємо
+      alert(`Debug: API Response: isSubscribed=${data.isSubscribed}, status=${data.status}`);
+      
       return data.isSubscribed;
       
     } catch (error) {
       console.error('Помилка перевірки підписки:', error);
+      alert(`Debug: ПОМИЛКА! ${error.message}`);
       return false;
     } finally {
       setIsCheckingSubscription(false);
@@ -504,6 +537,9 @@ export function MapPage() {
   // Обробник кліку на кнопку "Детальніше"
   const handleDetailsClick = async (e) => {
     e.preventDefault();
+    
+    // Debug: перевіряємо чи спрацьовує функція взагалі
+    alert('Debug: Кнопка "Детальніше" натиснута!');
     
     const isSubscribed = await checkChannelSubscription();
     
