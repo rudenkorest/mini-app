@@ -8,6 +8,9 @@ import {
   Avatar,
   Caption,
   Badge,
+  Modal,
+  Headline,
+  Text,
 } from '@telegram-apps/telegram-ui';
 import { Page } from '@/components/Page.jsx';
 import ReactMapGL, { Marker, Popup } from 'react-map-gl';
@@ -426,10 +429,94 @@ export function MapPage() {
   const [showBanner, setShowBanner] = useState(true);
   const [showTonBanner, setShowTonBanner] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState(null);
+  const [showSubscribeModal, setShowSubscribeModal] = useState(false);
+  const [isCheckingSubscription, setIsCheckingSubscription] = useState(false);
+  
+  // Канал, на який потрібно підписатися
+  const TELEGRAM_CHANNEL = '-1001968388006'; // Chat ID вашого приватного каналу
+  const TELEGRAM_CHANNEL_URL = 'https://t.me/+8Bui7KD5WrJiZjli'; // Замініть на invite link вашого каналу
+  const BACKEND_URL = process.env.NODE_ENV === 'production' 
+    ? 'https://mini-app-backend-production-826a.up.railway.app' // Railway URL
+    : 'http://localhost:3001';
   
   const handleMarkerClick = (locationData) => {
     setSelectedLocation(locationData);
     setShowTonBanner(true);
+  };
+  
+  // Функція перевірки підписки на канал
+  const checkChannelSubscription = async () => {
+    try {
+      setIsCheckingSubscription(true);
+      
+      // Отримуємо дані користувача з Telegram WebApp
+      const tg = window.Telegram?.WebApp;
+      const user = tg?.initDataUnsafe?.user;
+      
+      if (!user) {
+        console.error('Не вдалося отримати дані користувача');
+        return false;
+      }
+      
+      // Запит до нашого бекенду для перевірки підписки
+      const response = await fetch(`${BACKEND_URL}/api/check-subscription`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          channel: TELEGRAM_CHANNEL,
+          initData: tg.initData || '' // для верифікації на бекенді
+        })
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('Помилка API:', error);
+        return false;
+      }
+      
+      const data = await response.json();
+      return data.isSubscribed;
+      
+    } catch (error) {
+      console.error('Помилка перевірки підписки:', error);
+      return false;
+    } finally {
+      setIsCheckingSubscription(false);
+    }
+  };
+  
+  // Обробник кліку на кнопку "Детальніше"
+  const handleDetailsClick = async (e) => {
+    e.preventDefault();
+    
+    const isSubscribed = await checkChannelSubscription();
+    
+    if (isSubscribed) {
+      // Якщо підписаний - відкриваємо посилання
+      window.open(selectedLocation.link || 'https://nohello.net/en/', '_blank');
+    } else {
+      // Якщо не підписаний - показуємо попап
+      setShowSubscribeModal(true);
+    }
+  };
+  
+  // Обробник підписки на канал
+  const handleSubscribeClick = () => {
+    window.open(TELEGRAM_CHANNEL_URL, '_blank');
+    // Закриваємо модальне вікно
+    setShowSubscribeModal(false);
+    // Можна додати таймер для повторної перевірки через кілька секунд
+    setTimeout(() => {
+      // Повторна перевірка після підписки
+      checkChannelSubscription().then(isSubscribed => {
+        if (isSubscribed) {
+          window.open(selectedLocation?.link || 'https://nohello.net/en/', '_blank');
+        }
+      });
+    }, 3000);
   };
   
   return (
@@ -463,15 +550,64 @@ export function MapPage() {
                 onCloseIcon={() => setShowTonBanner(false)}
               >
                 <Button
-                  Component="a"
-                  href="https://nohello.net/en/"
                   mode="white"
                   size="s"
-                  target="_blank"
+                  onClick={handleDetailsClick}
+                  loading={isCheckingSubscription}
                 >
                   Детальніше
                 </Button>
               </Banner>
+            </div>
+          </div>
+        )}
+        
+        {/* Модальне вікно для підписки */}
+        {showSubscribeModal && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10000,
+            padding: 20,
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: 16,
+              padding: 24,
+              maxWidth: 340,
+              width: '100%',
+              boxShadow: '0 4px 24px rgba(0, 0, 0, 0.15)',
+            }}>
+              <Headline weight="2" style={{ marginBottom: 12, textAlign: 'center' }}>
+                Підпишіться на канал
+              </Headline>
+              <Text style={{ marginBottom: 20, textAlign: 'center', color: '#666' }}>
+                Щоб отримати доступ до детальної інформації, підпишіться на наш Telegram канал
+              </Text>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <Button
+                  size="l"
+                  stretched
+                  onClick={handleSubscribeClick}
+                >
+                  Підписатися на канал
+                </Button>
+                <Button
+                  mode="bezeled"
+                  size="l"
+                  stretched
+                  onClick={() => setShowSubscribeModal(false)}
+                >
+                  Закрити
+                </Button>
+              </div>
             </div>
           </div>
         )}
