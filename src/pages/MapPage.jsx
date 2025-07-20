@@ -453,12 +453,22 @@ export function MapPage() {
       const tg = window.Telegram?.WebApp;
       const user = tg?.initDataUnsafe?.user;
       
+      console.log('🔍 Telegram WebApp data:', tg);
+      console.log('👤 User data:', user);
+      
       if (!user) {
         console.error('Не вдалося отримати дані користувача');
         return false;
       }
       
       // Запит до нашого бекенду для перевірки підписки
+      console.log('🌐 Відправляємо запит до:', `${BACKEND_URL}/api/check-subscription`);
+      console.log('📤 Дані запиту:', {
+        userId: user.id,
+        channel: TELEGRAM_CHANNEL,
+        initData: tg.initData ? 'present' : 'missing'
+      });
+      
       const response = await fetch(`${BACKEND_URL}/api/check-subscription`, {
         method: 'POST',
         headers: {
@@ -471,13 +481,16 @@ export function MapPage() {
         })
       });
       
+      console.log('📥 Статус відповіді:', response.status);
+      
       if (!response.ok) {
         const error = await response.json();
-        console.error('Помилка API:', error);
+        console.error('❌ Помилка API:', error);
         return false;
       }
       
       const data = await response.json();
+      console.log('✅ Відповідь API:', data);
       return data.isSubscribed;
       
     } catch (error) {
