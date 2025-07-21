@@ -24,3 +24,14 @@ body {
   -ms-user-select: none;
   user-select: none;
 }
+
+/* Запобігання swipe-to-close на весь застосунок */
+html, body {
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tgui-root {
+  overscroll-behavior: contain;
+  touch-action: pan-x pan-y;
+}

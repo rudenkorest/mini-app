@@ -110,6 +110,19 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
             wa.expand();
             console.log('✅ WebApp готовий і розгорнутий');
 
+            // Вимикаємо vertical swipes для запобігання випадкового згортання (Bot API 7.7+)
+            if (wa.disableVerticalSwipes) {
+              console.log('🚫 Вимикаємо vertical swipes...');
+              try {
+                wa.disableVerticalSwipes();
+                console.log('✅ Vertical swipes вимкнено:', !wa.isVerticalSwipesEnabled);
+              } catch (error) {
+                console.error('❌ Помилка disableVerticalSwipes:', error);
+              }
+            } else {
+              console.log('⚠️ disableVerticalSwipes API недоступний (потрібна Bot API 7.7+)');
+            }
+
             // Спробуємо увійти в full-screen режим (Bot API 8.0+)
             if (wa.requestFullscreen) {
               console.log('🖥 Увімкнення full-screen режиму...');
@@ -308,6 +321,26 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
       }
     } else {
       console.log('⚠️ Full-screen API недоступний');
+    }
+  };
+
+  // Функція для toggle vertical swipes
+  const handleSwipeToggle = () => {
+    const wa = window.Telegram?.WebApp;
+    if (wa && wa.disableVerticalSwipes && wa.enableVerticalSwipes) {
+      try {
+        if (wa.isVerticalSwipesEnabled) {
+          wa.disableVerticalSwipes();
+          console.log('🚫 Vertical swipes вимкнено');
+        } else {
+          wa.enableVerticalSwipes();
+          console.log('✅ Vertical swipes увімкнено');
+        }
+      } catch (error) {
+        console.error('❌ Помилка toggle swipes:', error);
+      }
+    } else {
+      console.log('⚠️ Vertical swipes API недоступний');
     }
   };
 
@@ -521,6 +554,7 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
         <Button shape="circle" size="m" onClick={handleZoomOut}>-</Button>
         <Button shape="circle" size="m" onClick={handleGeolocate}>→</Button>
         <Button shape="circle" size="m" onClick={handleFullscreen}>⛶</Button>
+        <Button shape="circle" size="m" onClick={handleSwipeToggle}>↕</Button>
       </div>
       {/* Повідомлення про помилку геолокації - закоментовано, оскільки в Telegram працює нормально */}
       {/* {locationError && (
