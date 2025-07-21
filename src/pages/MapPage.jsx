@@ -109,6 +109,27 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
             wa.ready();
             wa.expand();
             console.log('✅ WebApp готовий і розгорнутий');
+
+            // Спробуємо увійти в full-screen режим (Bot API 8.0+)
+            if (wa.requestFullscreen) {
+              console.log('🖥 Увімкнення full-screen режиму...');
+              try {
+                wa.requestFullscreen();
+                
+                // Слухаємо події full-screen
+                wa.onEvent('fullscreenChanged', () => {
+                  console.log('📺 Full-screen змінено:', wa.isFullscreen);
+                });
+                
+                wa.onEvent('fullscreenFailed', (error) => {
+                  console.error('❌ Помилка full-screen:', error);
+                });
+              } catch (error) {
+                console.error('❌ Помилка requestFullscreen:', error);
+              }
+            } else {
+              console.log('⚠️ Full-screen API недоступний (потрібна Bot API 8.0+)');
+            }
           } catch (e) {
             console.error('Помилка ініціалізації WebApp:', e);
           }
@@ -269,6 +290,26 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
   // Функції для зміни масштабу
   const handleZoomIn = () => setViewport(v => ({ ...v, zoom: Math.min(v.zoom + 1, 18) }));
   const handleZoomOut = () => setViewport(v => ({ ...v, zoom: Math.max(v.zoom - 1, 10) }));
+
+  // Функція для full-screen режиму
+  const handleFullscreen = () => {
+    const wa = window.Telegram?.WebApp;
+    if (wa && wa.requestFullscreen) {
+      try {
+        if (wa.isFullscreen) {
+          wa.exitFullscreen();
+          console.log('🔙 Вихід з full-screen');
+        } else {
+          wa.requestFullscreen();
+          console.log('🖥 Увімкнення full-screen');
+        }
+      } catch (error) {
+        console.error('❌ Помилка full-screen:', error);
+      }
+    } else {
+      console.log('⚠️ Full-screen API недоступний');
+    }
+  };
 
   // Функція для переходу до геолокації користувача
   const handleGeolocate = () => {
@@ -479,6 +520,7 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
         <Button shape="circle" size="m" onClick={handleZoomIn}>+</Button>
         <Button shape="circle" size="m" onClick={handleZoomOut}>-</Button>
         <Button shape="circle" size="m" onClick={handleGeolocate}>→</Button>
+        <Button shape="circle" size="m" onClick={handleFullscreen}>⛶</Button>
       </div>
       {/* Повідомлення про помилку геолокації - закоментовано, оскільки в Telegram працює нормально */}
       {/* {locationError && (
