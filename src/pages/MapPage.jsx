@@ -26,7 +26,7 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
     zoom: 12,
     width: '100%',
     height: '100%',
-    // Додаємо параметри для покращення мобільного досвіду
+    // Оптимізовані параметри для мобільних
     dragPan: true,
     dragRotate: false,
     scrollZoom: true,
@@ -34,6 +34,12 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
     touchRotate: false,
     keyboard: false,
     doubleClickZoom: true,
+    // Додаткові параметри для плавності
+    touchZoomRotate: true,
+    touchPitch: false,
+    boxZoom: false,
+    pitchWithRotate: false,
+    interactive: true,
   });
   const [userLocation, setUserLocation] = useState(null);
   const [locationError, setLocationError] = useState(null);
@@ -41,6 +47,29 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
   const [isMobile, setIsMobile] = useState(false);
   const [locations, setLocations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Мобільні оптимізації для Telegram
+  useEffect(() => {
+    // Блокуємо скрол сторінки під картою
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
+    document.body.style.height = '100%';
+    
+    // Увімкнути хардварне прискорення
+    const mapContainer = document.querySelector('.mapboxgl-map');
+    if (mapContainer) {
+      mapContainer.style.transform = 'translateZ(0)';
+      mapContainer.style.willChange = 'transform';
+    }
+
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
+    };
+  }, []);
 
   // Ініціалізація Telegram WebApp
   useEffect(() => {
@@ -324,19 +353,16 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
     }
   };
 
-  // Обробник зміни viewport, що запобігає випадковим стрибкам
-  const handleViewportChange = (newViewport) => {
-    // Обмежуємо максимальний і мінімальний зум для запобігання надмірного наближення/віддалення
-    const constrainedZoom = Math.min(Math.max(newViewport.zoom, 10), 18);
+  // Обробник зміни viewport для нової версії react-map-gl
+  const handleViewportChange = (evt) => {
+    const newViewport = evt.viewState;
     
-    // Обмежуємо швидкість зміни viewport для плавності
-    const transitionDuration = 
-      Math.abs(newViewport.zoom - viewport.zoom) > 2 ? 300 : 0;
+    // Обмежуємо зум
+    const constrainedZoom = Math.min(Math.max(newViewport.zoom, 10), 18);
     
     setViewport({
       ...newViewport,
       zoom: constrainedZoom,
-      transitionDuration,
     });
   };
 
@@ -355,13 +381,23 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
         height="100%"
         mapStyle="mapbox://styles/mapbox/streets-v11"
         mapboxApiAccessToken={import.meta.env.VITE_MAPBOX_TOKEN}
-        onViewportChange={handleViewportChange}
-        dragRotate={false} // Вимикаємо обертання для спрощення взаємодії
-        touchZoom={true} // Дозволяємо зум на дотикових екранах
-        touchAction="pan-x pan-y" // Покращує поведінку на дотикових екранах
-        minZoom={10} // Обмежуємо мінімальний зум
-        maxZoom={18} // Обмежуємо максимальний зум
-        scrollZoom={{ speed: 0.3, smooth: true }} // Зменшуємо швидкість зуму колесом
+        onMove={handleViewportChange}
+        dragRotate={false}
+        touchZoom={true}
+        touchPitch={false}
+        minZoom={10}
+        maxZoom={18}
+        scrollZoom={{ speed: 0.5, smooth: true }}
+        // Мобільні оптимізації
+        cooperativeGestures={false}
+        doubleClickZoom={true}
+        keyboard={false}
+        attributionControl={false}
+        logoPosition="bottom-right"
+        // Продуктивність
+        optimizeForTerrain={false}
+        antialias={false}
+        preserveDrawingBuffer={false}
       >
         {/* Кластери та маркери */}
         {!isLoading && clusters.map(cluster => {
@@ -685,7 +721,7 @@ export function MapPage() {
           }}>
             <div style={{width: '100%', maxWidth: '100%', pointerEvents: 'auto'}}>
               <Banner
-                before={<Image size={48} src={selectedLocation.avatar} />}
+                before={<Image size={48} src="https://i.ibb.co/gFc2zJYp/photo-2025-07-18-19-04-34.jpg" />}
                 callout={selectedLocation.address || "Київ"}
                 background={<img alt="Location background" src={selectedLocation.avatar} style={{width: '100%', height: '100%', opacity: 0.5, objectFit: "cover"}}/>}
                 header={selectedLocation.title}
