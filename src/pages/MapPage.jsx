@@ -532,6 +532,30 @@ export function MapPage() {
     setSelectedLocation(locationData);
     setShowTonBanner(true);
   };
+
+  // Універсальна функція для відкриття посилань
+  const openLink = (url) => {
+    if (!url) return;
+    
+    // Перевіряємо чи це Telegram посилання
+    if (url.includes('t.me/')) {
+      // Для Telegram посилань використовуємо openTelegramLink для плавного переходу
+      if (window.Telegram?.WebApp?.openTelegramLink) {
+        window.Telegram.WebApp.openTelegramLink(url);
+      } else if (window.Telegram?.WebApp?.openLink) {
+        window.Telegram.WebApp.openLink(url);
+      } else {
+        window.open(url, '_blank');
+      }
+    } else {
+      // Для зовнішніх посилань використовуємо openLink
+      if (window.Telegram?.WebApp?.openLink) {
+        window.Telegram.WebApp.openLink(url);
+      } else {
+        window.open(url, '_blank');
+      }
+    }
+  };
   
   // Функція перевірки підписки на канал
   const checkChannelSubscription = async () => {
@@ -615,14 +639,7 @@ export function MapPage() {
     if (isSubscribed) {
       // Якщо підписаний - відкриваємо посилання
       const linkToOpen = selectedLocation.link || 'https://nohello.net/en/';
-      
-      // Використовуємо Telegram API для відкриття посилань на мобільних
-      if (window.Telegram?.WebApp?.openLink) {
-        window.Telegram.WebApp.openLink(linkToOpen);
-      } else {
-        // Резервний варіант для Desktop
-        window.open(linkToOpen, '_blank');
-      }
+      openLink(linkToOpen);
     } else {
       // Якщо не підписаний - показуємо попап
       setShowSubscribeModal(true);
@@ -640,11 +657,7 @@ export function MapPage() {
       checkChannelSubscription().then(isSubscribed => {
         if (isSubscribed) {
           const linkToOpen = selectedLocation?.link || 'https://nohello.net/en/';
-          if (window.Telegram?.WebApp?.openLink) {
-            window.Telegram.WebApp.openLink(linkToOpen);
-          } else {
-            window.open(linkToOpen, '_blank');
-          }
+          openLink(linkToOpen);
         }
       });
     }, 3000);
