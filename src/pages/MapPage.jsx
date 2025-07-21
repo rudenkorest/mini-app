@@ -48,27 +48,14 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
   const [locations, setLocations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Мобільні оптимізації для Telegram
+  // Мобільні оптимізації для Telegram (обережно)
   useEffect(() => {
-    // Блокуємо скрол сторінки під картою
-    document.body.style.overflow = 'hidden';
-    document.body.style.position = 'fixed';
-    document.body.style.width = '100%';
-    document.body.style.height = '100%';
-    
-    // Увімкнути хардварне прискорення
+    // Тільки хардварне прискорення без блокування жестів
     const mapContainer = document.querySelector('.mapboxgl-map');
     if (mapContainer) {
       mapContainer.style.transform = 'translateZ(0)';
       mapContainer.style.willChange = 'transform';
     }
-
-    return () => {
-      document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.width = '';
-      document.body.style.height = '';
-    };
   }, []);
 
   // Ініціалізація Telegram WebApp
@@ -372,7 +359,7 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
       height: '100%',
       overflow: 'hidden',
       position: 'relative',
-      touchAction: isMobile ? 'pan-x pan-y' : 'auto', // Покращує поведінку на дотикових екранах
+      touchAction: 'manipulation', // Дозволяє zoom/pan але прискорює жести
     }}>
       <ReactMapGL
         ref={mapRef}
@@ -384,20 +371,12 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
         onMove={handleViewportChange}
         dragRotate={false}
         touchZoom={true}
-        touchPitch={false}
         minZoom={10}
         maxZoom={18}
-        scrollZoom={{ speed: 0.5, smooth: true }}
-        // Мобільні оптимізації
-        cooperativeGestures={false}
+        scrollZoom={true}
         doubleClickZoom={true}
         keyboard={false}
         attributionControl={false}
-        logoPosition="bottom-right"
-        // Продуктивність
-        optimizeForTerrain={false}
-        antialias={false}
-        preserveDrawingBuffer={false}
       >
         {/* Кластери та маркери */}
         {!isLoading && clusters.map(cluster => {

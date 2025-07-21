@@ -2,10 +2,6 @@ body {
   background: var(--tg-theme-secondary-bg-color, white);
   padding: 0;
   margin: 0;
-  /* Оптимізації для мобільних карт */
-  touch-action: pan-x pan-y;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
 }
 
 /* Оптимізації Mapbox для мобільних */
