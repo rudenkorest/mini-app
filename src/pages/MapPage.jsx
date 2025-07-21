@@ -340,10 +340,8 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
     }
   };
 
-  // Обробник зміни viewport для нової версії react-map-gl
-  const handleViewportChange = (evt) => {
-    const newViewport = evt.viewState;
-    
+  // Обробник зміни viewport
+  const handleViewportChange = (newViewport) => {
     // Обмежуємо зум
     const constrainedZoom = Math.min(Math.max(newViewport.zoom, 10), 18);
     
@@ -368,7 +366,7 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
         height="100%"
         mapStyle="mapbox://styles/mapbox/streets-v11"
         mapboxApiAccessToken={import.meta.env.VITE_MAPBOX_TOKEN}
-        onMove={handleViewportChange}
+        onViewportChange={handleViewportChange}
         dragRotate={false}
         touchZoom={true}
         minZoom={10}
