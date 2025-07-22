@@ -396,6 +396,8 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
         mapStyle="mapbox://styles/mapbox/streets-v11"
         mapboxAccessToken={import.meta.env.VITE_MAPBOX_TOKEN}
         onMove={evt => setViewState(evt.viewState)}
+        dragRotate={false}
+        touchRotate={false}
       >
         {/* Кластери та маркери */}
         {!isLoading && clusters.map(cluster => {
