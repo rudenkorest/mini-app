@@ -398,6 +398,12 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
         onMove={evt => setViewState(evt.viewState)}
         dragRotate={false}
         touchRotate={false}
+        touchPitch={false}
+        dragPan={true}
+        touchZoom={true}
+        doubleClickZoom={true}
+        keyboard={false}
+        pitchWithRotate={false}
       >
         {/* Кластери та маркери */}
         {!isLoading && clusters.map(cluster => {
@@ -435,7 +441,7 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
                 <Avatar
                   src={cluster.properties.avatar}
                   alt={cluster.properties.title}
-                  size={48}
+                  size={40}
                 />
                 <Caption caps level="1" weight="2" style={{ color: '#000' }}>{cluster.properties.title}</Caption>
               </div>
@@ -498,12 +504,14 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
         </div>
       )}
       {/* Кнопки масштабування та навігації */}
-      <div style={{position: 'absolute', top: 80, right: 12, display: 'flex', flexDirection: 'column', gap: 8}}>
-        <Button shape="circle" size="m" onClick={handleZoomIn}>+</Button>
-        <Button shape="circle" size="m" onClick={handleZoomOut}>-</Button>
+      <div style={{position: 'absolute', top: 100, right: 12, display: 'flex', flexDirection: 'column', gap: 5}}>
+        {/* Група zoom кнопок без gap */}
+        <div style={{display: 'flex', flexDirection: 'column', gap: 0}}>
+          <Button shape="circle" size="m" onClick={handleZoomIn}>+</Button>
+          <Button shape="circle" size="m" onClick={handleZoomOut}>-</Button>
+        </div>
+        {/* Кнопка геолокації окремо */}
         <Button shape="circle" size="m" onClick={handleGeolocate}>→</Button>
-        <Button shape="circle" size="m" onClick={handleFullscreen}>⛶</Button>
-        <Button shape="circle" size="m" onClick={handleSwipeToggle}>↕</Button>
       </div>
       {/* Повідомлення про помилку геолокації - закоментовано, оскільки в Telegram працює нормально */}
       {/* {locationError && (
