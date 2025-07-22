@@ -3,37 +3,18 @@
 // Measurement ID з environment variables
 const GA_MEASUREMENT_ID = import.meta.env.VITE_GA_MEASUREMENT_ID;
 
-// Функція для динамічного завантаження gtag
-const loadGtagScript = () => {
-  return new Promise((resolve) => {
-    if (document.querySelector(`script[src*="googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}"]`)) {
-      resolve();
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.async = true;
-    script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`;
-    script.onload = resolve;
-    document.head.appendChild(script);
-  });
-};
-
 // Ініціалізація Analytics
-export const initAnalytics = async () => {
+export const initAnalytics = () => {
   if (!GA_MEASUREMENT_ID) {
     console.warn('GA_MEASUREMENT_ID не знайдено в environment variables');
     return;
   }
 
-  // Завантажуємо gtag script
-  await loadGtagScript();
-
   // Отримуємо дані користувача з Telegram
   const telegramUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
   
   if (window.gtag) {
-    // Конфігуруємо Google Analytics
+    // Додаткова конфігурація з Telegram даними
     window.gtag('config', GA_MEASUREMENT_ID, {
       custom_map: {
         'telegram_user_id': telegramUser?.id || 'anonymous',
@@ -45,6 +26,8 @@ export const initAnalytics = async () => {
     });
 
     console.log('📊 Google Analytics ініціалізовано для Telegram Mini App');
+  } else {
+    console.warn('⚠️ gtag не знайдено - перевірте що скрипт завантажився');
   }
 };
 
