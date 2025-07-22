@@ -28,7 +28,7 @@ import {
   trackSessionDuration 
 } from '@/lib/analytics';
 
-function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
+function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, setShowFeedbackModal }) {
   const [viewState, setViewState] = useState({
     longitude: 30.5234, // Київ
     latitude: 50.4501,
@@ -531,6 +531,18 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
       <div style={{position: 'absolute', top: 100, left: 10, zIndex: 10}}>
         <Badge mode="critical" large type='number'>Beta 1.0</Badge>
       </div>
+      
+      {/* Кнопка фідбеку під Beta badge */}
+      <div style={{position: 'absolute', top: 130, left: 15, zIndex: 10}}>
+        <Button 
+          shape="circle" 
+          size="m" 
+          onClick={() => setShowFeedbackModal(true)}
+        >
+          💬
+        </Button>
+      </div>
+      
       {/* Індикатор завантаження */}
       {isLoading && (
         <div style={{
@@ -575,6 +587,7 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
         {/* Кнопка геолокації окремо */}
         <Button shape="circle" size="m" onClick={handleGeolocate}>→</Button>
       </div>
+      
       {/* Повідомлення про помилку геолокації - закоментовано, оскільки в Telegram працює нормально */}
       {/* {locationError && (
         <div style={{
@@ -604,6 +617,7 @@ export function MapPage() {
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [showSubscribeModal, setShowSubscribeModal] = useState(false);
   const [isCheckingSubscription, setIsCheckingSubscription] = useState(false);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   
   // Ініціалізація Telegram WebApp
   useEffect(() => {
@@ -802,7 +816,9 @@ export function MapPage() {
         <MapStub 
           showBanner={showBanner} 
           onCloseBanner={() => setShowBanner(false)} 
-          onMarkerClick={handleMarkerClick} 
+          onMarkerClick={handleMarkerClick}
+          showFeedbackModal={showFeedbackModal}
+          setShowFeedbackModal={setShowFeedbackModal}
         />
         {showTonBanner && selectedLocation && (
           <div style={{
@@ -888,6 +904,40 @@ export function MapPage() {
             </div>
           </div>
         )}
+        
+        {/* Modal фідбеку з Telegram UI */}
+        <Modal
+          open={showFeedbackModal}
+          onOpenChange={setShowFeedbackModal}
+        >
+          <Modal.Header>
+            Поділіться враженням 💭
+          </Modal.Header>
+          
+          <div style={{ padding: 24 }}>
+            <Text style={{ marginBottom: 20, textAlign: 'center', color: 'var(--tg-theme-hint-color, #666)' }}>
+              Ваш відгук допоможе покращити додаток для всіх користувачів
+            </Text>
+            
+            <Text style={{ marginBottom: 16 }}>
+              Це тестова версія модального вікна для збору фідбеку від користувачів MVP.
+            </Text>
+            
+            <Text style={{ marginBottom: 20 }}>
+              Тут буде форма з полями для відгуку, рейтингу та категорії фідбеку.
+            </Text>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <Button
+                size="l"
+                stretched
+                onClick={() => setShowFeedbackModal(false)}
+              >
+                Закрити
+              </Button>
+            </div>
+          </div>
+        </Modal>
       </div>
     </Page>
   );
