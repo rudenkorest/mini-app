@@ -13,19 +13,17 @@ import {
   Text,
 } from '@telegram-apps/telegram-ui';
 import { Page } from '@/components/Page.jsx';
-import ReactMapGL, { Marker, Popup } from 'react-map-gl';
+import Map, { Marker, Popup } from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import Supercluster from 'supercluster';
 import { useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 
 function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
-  const [viewport, setViewport] = useState({
+  const [viewState, setViewState] = useState({
     longitude: 30.5234, // Київ
     latitude: 50.4501,
     zoom: 12,
-    width: '100%',
-    height: '100%',
   });
   const [userLocation, setUserLocation] = useState(null);
   const [locationError, setLocationError] = useState(null);
@@ -182,12 +180,11 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
         window.Telegram.WebApp.LocationManager.requestLocation({
           onSuccess: (location) => {
             console.log("Telegram геолокація успішна:", location);
-            setViewport(v => ({
+            setViewState(v => ({
               ...v,
               longitude: location.longitude,
               latitude: location.latitude,
               zoom: 15,
-              transitionDuration: 1000,
             }));
             setUserLocation({
               latitude: location.latitude,
@@ -219,12 +216,11 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           console.log("Браузерна геолокація успішна:", pos.coords);
-          setViewport(v => ({
+          setViewState(v => ({
             ...v,
             longitude: pos.coords.longitude,
             latitude: pos.coords.latitude,
             zoom: 15,
-            transitionDuration: 1000,
           }));
           setUserLocation({
             latitude: pos.coords.latitude,
@@ -272,15 +268,15 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
   let clusters = [];
   if (mapRef.current) {
     const bounds = mapRef.current.getMap().getBounds().toArray().flat();
-    clusters = supercluster.getClusters(bounds, Math.round(viewport.zoom));
+    clusters = supercluster.getClusters(bounds, Math.round(viewState.zoom));
   } else {
     // дефолтні bounds для першого рендера
-    clusters = supercluster.getClusters([30.5, 50.4, 30.6, 50.5], Math.round(viewport.zoom));
+    clusters = supercluster.getClusters([30.5, 50.4, 30.6, 50.5], Math.round(viewState.zoom));
   }
 
   // Функції для зміни масштабу
-  const handleZoomIn = () => setViewport(v => ({ ...v, zoom: v.zoom + 1 }));
-  const handleZoomOut = () => setViewport(v => ({ ...v, zoom: v.zoom - 1 }));
+  const handleZoomIn = () => setViewState(v => ({ ...v, zoom: v.zoom + 1 }));
+  const handleZoomOut = () => setViewState(v => ({ ...v, zoom: v.zoom - 1 }));
 
   // Функція для full-screen режиму
   const handleFullscreen = () => {
@@ -328,14 +324,11 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
       try {
         window.Telegram.WebApp.LocationManager.requestLocation({
           onSuccess: (location) => {
-            setViewport(v => ({
+            setViewState(v => ({
               ...v,
               longitude: location.longitude,
               latitude: location.latitude,
               zoom: 15,
-              transitionDuration: 1000,
-              width: v.width,
-              height: v.height,
             }));
             setUserLocation({
               latitude: location.latitude,
@@ -364,14 +357,11 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          setViewport(v => ({
+          setViewState(v => ({
             ...v,
             longitude: pos.coords.longitude,
             latitude: pos.coords.latitude,
             zoom: 15,
-            transitionDuration: 1000,
-            width: v.width,
-            height: v.height,
           }));
           setUserLocation({
             latitude: pos.coords.latitude,
@@ -392,11 +382,6 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
     }
   };
 
-  // Обробник зміни viewport
-  const handleViewportChange = (newViewport) => {
-    setViewport(newViewport);
-  };
-
   return (
     <div style={{
       width: '100%',
@@ -404,14 +389,13 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
       overflow: 'hidden',
       position: 'relative',
     }}>
-      <ReactMapGL
+      <Map
         ref={mapRef}
-        {...viewport}
-        width="100%"
-        height="100%"
+        {...viewState}
+        style={{width: '100%', height: '100%'}}
         mapStyle="mapbox://styles/mapbox/streets-v11"
-        mapboxApiAccessToken={import.meta.env.VITE_MAPBOX_TOKEN}
-        onViewportChange={handleViewportChange}
+        mapboxAccessToken={import.meta.env.VITE_MAPBOX_TOKEN}
+        onMove={evt => setViewState(evt.viewState)}
       >
         {/* Кластери та маркери */}
         {!isLoading && clusters.map(cluster => {
@@ -476,7 +460,7 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
             />
           </Marker>
         )}
-      </ReactMapGL>
+      </Map>
       {/* Індикатор завантаження */}
       {isLoading && (
         <div style={{
