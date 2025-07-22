@@ -4,34 +4,3 @@ body {
   margin: 0;
 }
 
-/* Оптимізації Mapbox для мобільних */
-.mapboxgl-map {
-  touch-action: pan-x pan-y;
-  -webkit-transform: translateZ(0);
-  transform: translateZ(0);
-  will-change: transform;
-}
-
-.mapboxgl-canvas-container {
-  -webkit-transform: translateZ(0);
-  transform: translateZ(0);
-}
-
-.mapboxgl-canvas {
-  touch-action: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-}
-
-/* Запобігання swipe-to-close на весь застосунок */
-html, body {
-  overscroll-behavior-y: contain;
-  -webkit-overflow-scrolling: touch;
-}
-
-.tgui-root {
-  overscroll-behavior: contain;
-  touch-action: pan-x pan-y;
-}

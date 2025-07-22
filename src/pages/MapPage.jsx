@@ -26,20 +26,6 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
     zoom: 12,
     width: '100%',
     height: '100%',
-    // Оптимізовані параметри для мобільних
-    dragPan: true,
-    dragRotate: false,
-    scrollZoom: true,
-    touchZoom: true,
-    touchRotate: false,
-    keyboard: false,
-    doubleClickZoom: true,
-    // Додаткові параметри для плавності
-    touchZoomRotate: true,
-    touchPitch: false,
-    boxZoom: false,
-    pitchWithRotate: false,
-    interactive: true,
   });
   const [userLocation, setUserLocation] = useState(null);
   const [locationError, setLocationError] = useState(null);
@@ -48,15 +34,7 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
   const [locations, setLocations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Мобільні оптимізації для Telegram (обережно)
-  useEffect(() => {
-    // Тільки хардварне прискорення без блокування жестів
-    const mapContainer = document.querySelector('.mapboxgl-map');
-    if (mapContainer) {
-      mapContainer.style.transform = 'translateZ(0)';
-      mapContainer.style.willChange = 'transform';
-    }
-  }, []);
+
 
   // Ініціалізація Telegram WebApp
   useEffect(() => {
@@ -301,8 +279,8 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
   }
 
   // Функції для зміни масштабу
-  const handleZoomIn = () => setViewport(v => ({ ...v, zoom: Math.min(v.zoom + 1, 18) }));
-  const handleZoomOut = () => setViewport(v => ({ ...v, zoom: Math.max(v.zoom - 1, 10) }));
+  const handleZoomIn = () => setViewport(v => ({ ...v, zoom: v.zoom + 1 }));
+  const handleZoomOut = () => setViewport(v => ({ ...v, zoom: v.zoom - 1 }));
 
   // Функція для full-screen режиму
   const handleFullscreen = () => {
@@ -416,13 +394,7 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
 
   // Обробник зміни viewport
   const handleViewportChange = (newViewport) => {
-    // Обмежуємо зум
-    const constrainedZoom = Math.min(Math.max(newViewport.zoom, 10), 18);
-    
-    setViewport({
-      ...newViewport,
-      zoom: constrainedZoom,
-    });
+    setViewport(newViewport);
   };
 
   return (
@@ -431,7 +403,6 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
       height: '100%',
       overflow: 'hidden',
       position: 'relative',
-      touchAction: 'manipulation', // Дозволяє zoom/pan але прискорює жести
     }}>
       <ReactMapGL
         ref={mapRef}
@@ -441,14 +412,6 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
         mapStyle="mapbox://styles/mapbox/streets-v11"
         mapboxApiAccessToken={import.meta.env.VITE_MAPBOX_TOKEN}
         onViewportChange={handleViewportChange}
-        dragRotate={false}
-        touchZoom={true}
-        minZoom={10}
-        maxZoom={18}
-        scrollZoom={true}
-        doubleClickZoom={true}
-        keyboard={false}
-        attributionControl={false}
       >
         {/* Кластери та маркери */}
         {!isLoading && clusters.map(cluster => {
