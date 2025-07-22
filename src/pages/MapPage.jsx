@@ -18,6 +18,15 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import Supercluster from 'supercluster';
 import { useRef } from 'react';
 import { supabase } from '@/lib/supabase';
+import { 
+  initAnalytics, 
+  trackPageView, 
+  trackMapInteraction, 
+  trackMarkerClick, 
+  trackSubscriptionCheck,
+  trackError,
+  trackSessionDuration 
+} from '@/lib/analytics';
 
 function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
   const [viewState, setViewState] = useState({
@@ -31,12 +40,16 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
   const [isMobile, setIsMobile] = useState(false);
   const [locations, setLocations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-
+  const sessionStartTime = useRef(Date.now());
 
 
   // Ініціалізація Telegram WebApp
   useEffect(() => {
     console.log('🚀 Початок ініціалізації Telegram WebApp...');
+    
+    // Ініціалізуємо Analytics
+    initAnalytics();
+    trackPageView('Map Page');
     
     // Примусова ініціалізація Telegram WebApp
     if (window.Telegram) {
@@ -148,6 +161,22 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
     fetchLocations();
   }, []);
 
+  // Відстеження тривалості сесії
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      const sessionDuration = Date.now() - sessionStartTime.current;
+      trackSessionDuration(sessionDuration);
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      const sessionDuration = Date.now() - sessionStartTime.current;
+      trackSessionDuration(sessionDuration);
+    };
+  }, []);
+
   const fetchLocations = async () => {
     try {
       setIsLoading(true);
@@ -158,12 +187,15 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
 
       if (error) {
         console.error('Помилка завантаження локацій:', error);
+        trackError('Supabase Error', error.message);
         setLocations([]); // Якщо помилка - показуємо пусту карту
       } else {
         setLocations(data || []);
+        trackMapInteraction('locations_loaded', { count: data?.length || 0 });
       }
     } catch (error) {
       console.error('Помилка при завантаженні локацій:', error);
+      trackError('Fetch Error', error.message);
       setLocations([]); // При будь-якій помилці - показуємо пусту карту
     } finally {
       setIsLoading(false);
@@ -189,6 +221,11 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
             setUserLocation({
               latitude: location.latitude,
               longitude: location.longitude,
+            });
+            trackMapInteraction('geolocate_success', { 
+              source: 'telegram_api',
+              latitude: location.latitude,
+              longitude: location.longitude 
             });
           },
           onError: (error) => {
@@ -275,8 +312,15 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
   }
 
   // Функції для зміни масштабу
-  const handleZoomIn = () => setViewState(v => ({ ...v, zoom: v.zoom + 1 }));
-  const handleZoomOut = () => setViewState(v => ({ ...v, zoom: v.zoom - 1 }));
+  const handleZoomIn = () => {
+    setViewState(v => ({ ...v, zoom: v.zoom + 1 }));
+    trackMapInteraction('zoom_in', { zoom: viewState.zoom + 1 });
+  };
+  
+  const handleZoomOut = () => {
+    setViewState(v => ({ ...v, zoom: v.zoom - 1 }));
+    trackMapInteraction('zoom_out', { zoom: viewState.zoom - 1 });
+  };
 
   // Функція для full-screen режиму
   const handleFullscreen = () => {
@@ -320,6 +364,8 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
 
   // Функція для переходу до геолокації користувача
   const handleGeolocate = () => {
+    trackMapInteraction('geolocate_requested');
+    
     if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.LocationManager) {
       try {
         window.Telegram.WebApp.LocationManager.requestLocation({
@@ -333,6 +379,11 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
             setUserLocation({
               latitude: location.latitude,
               longitude: location.longitude,
+            });
+            trackMapInteraction('geolocate_success', { 
+              source: 'telegram_api',
+              latitude: location.latitude,
+              longitude: location.longitude 
             });
           },
           onError: (error) => {
@@ -367,9 +418,15 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
             latitude: pos.coords.latitude,
             longitude: pos.coords.longitude,
           });
+          trackMapInteraction('geolocate_success', { 
+            source: 'browser_api',
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude 
+          });
         },
         (err) => {
           alert('Не вдалося отримати геолокацію: ' + err.message);
+          trackError('Browser Geolocation', err.message);
         },
         { 
           enableHighAccuracy: true, 
@@ -379,6 +436,7 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
       );
     } else {
       alert('Геолокація не підтримується вашим браузером');
+      trackError('Geolocation Not Supported', 'Browser does not support geolocation');
     }
   };
 
@@ -581,6 +639,7 @@ export function MapPage() {
   const handleMarkerClick = (locationData) => {
     setSelectedLocation(locationData);
     setShowTonBanner(true);
+    trackMarkerClick(locationData.id, locationData.title);
   };
 
   // Універсальна функція для відкриття посилань
@@ -611,6 +670,7 @@ export function MapPage() {
   const checkChannelSubscription = async () => {
     try {
       setIsCheckingSubscription(true);
+      trackSubscriptionCheck('check_subscription_started');
       
       // Отримуємо дані користувача з Telegram WebApp
       const tg = window.Telegram?.WebApp;
@@ -621,21 +681,25 @@ export function MapPage() {
       
       if (!window.Telegram) {
         console.error('Telegram API не знайдено! Відкрийте через Telegram.');
+        trackError('Telegram API Not Found', 'User tried to check subscription without Telegram API');
         return false;
       }
       
       if (!tg) {
         console.error('WebApp не ініціалізовано! Налаштуйте Menu Button в BotFather.');
+        trackError('WebApp Not Initialized', 'User tried to check subscription without WebApp initialized');
         return false;
       }
       
       if (!tg.initDataUnsafe) {
         console.error('initDataUnsafe відсутній! Mini App запущено не через бота.');
+        trackError('initDataUnsafe Missing', 'User tried to check subscription without initDataUnsafe');
         return false;
       }
       
       if (!user) {
         console.error('Не вдалося отримати дані користувача');
+        trackError('User Data Not Found', 'Could not retrieve user data for subscription check');
         return false;
       }
       
@@ -664,6 +728,7 @@ export function MapPage() {
       if (!response.ok) {
         const error = await response.json();
         console.error('❌ Помилка API:', error);
+        trackError('Subscription API Error', error.message);
         return false;
       }
       
@@ -674,9 +739,11 @@ export function MapPage() {
       
     } catch (error) {
       console.error('Помилка перевірки підписки:', error);
+      trackError('Subscription Check Error', error.message);
       return false;
     } finally {
       setIsCheckingSubscription(false);
+      trackSubscriptionCheck('check_subscription_finished');
     }
   };
   
@@ -690,9 +757,18 @@ export function MapPage() {
       // Якщо підписаний - відкриваємо посилання
       const linkToOpen = selectedLocation.link || 'https://nohello.net/en/';
       openLink(linkToOpen);
+      trackMapInteraction('details_link_opened', { 
+        locationId: selectedLocation.id,
+        locationTitle: selectedLocation.title,
+        link: linkToOpen 
+      });
     } else {
       // Якщо не підписаний - показуємо попап
       setShowSubscribeModal(true);
+      trackMapInteraction('subscription_modal_shown', { 
+        locationId: selectedLocation.id,
+        locationTitle: selectedLocation.title 
+      });
     }
   };
   
@@ -701,6 +777,8 @@ export function MapPage() {
     window.open(TELEGRAM_CHANNEL_URL, '_blank');
     // Закриваємо модальне вікно
     setShowSubscribeModal(false);
+    trackMapInteraction('subscribe_button_clicked', { channel: TELEGRAM_CHANNEL });
+    
     // Можна додати таймер для повторної перевірки через кілька секунд
     setTimeout(() => {
       // Повторна перевірка після підписки
@@ -708,6 +786,11 @@ export function MapPage() {
         if (isSubscribed) {
           const linkToOpen = selectedLocation?.link || 'https://nohello.net/en/';
           openLink(linkToOpen);
+          trackMapInteraction('post_subscription_link_opened', { 
+            locationId: selectedLocation?.id,
+            locationTitle: selectedLocation?.title,
+            link: linkToOpen 
+          });
         }
       });
     }, 3000);
