@@ -469,6 +469,10 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick }) {
           </Marker>
         )}
       </Map>
+      {/* Beta badge у верхньому лівому куті */}
+      <div style={{position: 'absolute', top: 100, left: 10, zIndex: 10}}>
+        <Badge mode="critical" large type='number'>Beta 1.0</Badge>
+      </div>
       {/* Індикатор завантаження */}
       {isLoading && (
         <div style={{
