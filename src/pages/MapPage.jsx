@@ -27,6 +27,7 @@ import {
   trackError,
   trackSessionDuration 
 } from '@/lib/analytics';
+import avatarIcon from '/images/avatar-icon.png';
 
 function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, setShowFeedbackModal }) {
   const [viewState, setViewState] = useState({
@@ -497,7 +498,7 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, 
             <Marker key={`marker-${cluster.properties.id}`} longitude={longitude} latitude={latitude} offsetLeft={-24} offsetTop={-48}>
               <div onClick={() => onMarkerClick(cluster.properties)} style={{cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8}}>
                 <Avatar
-                  src={cluster.properties.avatar}
+                  src={avatarIcon}
                   alt={cluster.properties.title}
                   size={40}
                 />
@@ -530,17 +531,6 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, 
       {/* Beta badge у верхньому лівому куті */}
       <div style={{position: 'absolute', top: 100, left: 10, zIndex: 10}}>
         <Badge mode="critical" large type='number'>Beta 1.0</Badge>
-      </div>
-      
-      {/* Кнопка фідбеку під Beta badge */}
-      <div style={{position: 'absolute', top: 130, left: 15, zIndex: 10}}>
-        <Button 
-          shape="circle" 
-          size="m" 
-          onClick={() => setShowFeedbackModal(true)}
-        >
-          💬
-        </Button>
       </div>
       
       {/* Індикатор завантаження */}
@@ -579,13 +569,22 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, 
       )}
       {/* Кнопки масштабування та навігації */}
       <div style={{position: 'absolute', top: 100, right: 12, display: 'flex', flexDirection: 'column', gap: 5}}>
+        {/* Кнопка фідбеку */}
+        <Button 
+          shape="circle" 
+          size="m" 
+          onClick={() => setShowFeedbackModal(true)}
+        >
+          💬
+        </Button>
+        
         {/* Група zoom кнопок без gap */}
         <div style={{display: 'flex', flexDirection: 'column', gap: 0}}>
-          <Button shape="circle" size="m" onClick={handleZoomIn}>+</Button>
-          <Button shape="circle" size="m" onClick={handleZoomOut}>-</Button>
+          <Button mode='bezeled' shape="circle" size="m" onClick={handleZoomIn}>+</Button>
+          <Button mode='bezeled'shape="circle" size="m" onClick={handleZoomOut}>-</Button>
         </div>
         {/* Кнопка геолокації окремо */}
-        <Button shape="circle" size="m" onClick={handleGeolocate}>→</Button>
+        <Button mode='grey'shape="circle" size="m" onClick={handleGeolocate}>→</Button>
       </div>
       
       {/* Повідомлення про помилку геолокації - закоментовано, оскільки в Telegram працює нормально */}
@@ -834,7 +833,7 @@ export function MapPage() {
           }}>
             <div style={{width: '100%', maxWidth: '100%', pointerEvents: 'auto'}}>
               <Banner
-                before={<Image size={48} src="https://i.ibb.co/gFc2zJYp/photo-2025-07-18-19-04-34.jpg" />}
+                before={<Image size={48} src={avatarIcon} />}
                 callout={selectedLocation.address || "Київ"}
                 background={<img alt="Location background" src={selectedLocation.avatar} style={{width: '100%', height: '100%', opacity: 0.5, objectFit: "cover"}}/>}
                 header={selectedLocation.title}
