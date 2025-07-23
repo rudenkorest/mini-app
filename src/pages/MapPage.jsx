@@ -11,6 +11,7 @@ import {
   Modal,
   Headline,
   Text,
+  Spinner,
 } from '@telegram-apps/telegram-ui';
 import { Page } from '@/components/Page.jsx';
 import Map, { Marker, Popup } from 'react-map-gl';
@@ -28,6 +29,7 @@ import {
   trackSessionDuration 
 } from '@/lib/analytics';
 import avatarIcon from '/images/avatar-icon.png';
+import geoIcon from '/images/geo-icon.svg';
 
 function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, setShowFeedbackModal }) {
   const [viewState, setViewState] = useState({
@@ -545,24 +547,25 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, 
           borderRadius: 12,
           boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
         }}>
-          <Caption weight="1">Завантаження локацій...</Caption>
+          <Spinner size='m' />
         </div>
       )}
       {/* Banner поверх карти */}
       {showBanner && (
-        <div style={{position: 'absolute', bottom: 25, right: 20, zIndex: 10, width: '90%', maxWidth: '90%'}}>
+        <div style={{position: 'absolute', bottom: 25, left: '50%', transform: 'translateX(-50%)', zIndex: 1, width: '90%', maxWidth: '90%'}}>
           <Banner
             background={<img alt="Nasa streams" src="https://www.nasa.gov/wp-content/uploads/2023/10/streams.jpg?resize=1536,864" style={{width: '150%'}}/>}
-            header="Двіж поряд"
-            subheader="Інтерактивна карта локацій Києва"
+            header="Трендові місця поруч з собою!"
+            subheader="Інтерактивна карта від медіа «Гуляй, Київ». Досліджуй місто з нами. "
             onCloseIcon={onCloseBanner}
             type="section"
           >
             <Button
               mode="white"
               size="s"
+              onClick={() => window.open('https://t.me/+8Bui7KD5WrJiZjli', '_blank')}
             >
-              Перейти в канал
+              Детальніше
             </Button>
           </Banner>
         </div>
@@ -581,10 +584,12 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, 
         {/* Група zoom кнопок без gap */}
         <div style={{display: 'flex', flexDirection: 'column', gap: 0}}>
           <Button mode='bezeled' shape="circle" size="m" onClick={handleZoomIn}>+</Button>
-          <Button mode='bezeled'shape="circle" size="m" onClick={handleZoomOut}>-</Button>
+          <Button mode='bezeled' shape="circle" size="m" onClick={handleZoomOut}>-</Button>
         </div>
         {/* Кнопка геолокації окремо */}
-        <Button mode='grey'shape="circle" size="m" onClick={handleGeolocate}>→</Button>
+        <Button mode='bezeled' shape="circle" size="m" onClick={handleGeolocate}>
+          <img src={geoIcon} alt="Геолокація" style={{width: 16, height: 16}} />
+        </Button>
       </div>
       
       {/* Повідомлення про помилку геолокації - закоментовано, оскільки в Telegram працює нормально */}
@@ -909,30 +914,34 @@ export function MapPage() {
           open={showFeedbackModal}
           onOpenChange={setShowFeedbackModal}
         >
-          <Modal.Header>
-            Поділіться враженням 💭
+          <Modal.Header after={
+            <Button mode="bezeled" size="s" onClick={() => setShowFeedbackModal(false)}>
+              ✕
+            </Button>
+          }>
+            Зв'язок
           </Modal.Header>
           
-          <div style={{ padding: 24 }}>
-            <Text style={{ marginBottom: 20, textAlign: 'center', color: 'var(--tg-theme-hint-color, #666)' }}>
-              Ваш відгук допоможе покращити додаток для всіх користувачів
-            </Text>
+          <div style={{ padding: '0 24px 24px 24px' }}>
+            <div style={{ marginBottom: 16 }}>
+              <Text style={{ lineHeight: '1.5' }}>
+                Застосунок працює в beta режимі, тому ми приймаємо будь-які скарги та пропозиції щодо його  та подальшого розвитку.
+              </Text>
+            </div>
             
-            <Text style={{ marginBottom: 16 }}>
-              Це тестова версія модального вікна для збору фідбеку від користувачів MVP.
-            </Text>
-            
-            <Text style={{ marginBottom: 20 }}>
-              Тут буде форма з полями для відгуку, рейтингу та категорії фідбеку.
-            </Text>
+            <div style={{ marginBottom: 20 }}>
+              <Text style={{ lineHeight: '1.5' }}>
+                Також в нашому каналі «Гуляй, Київ» та на самій карті доступна реклама.
+              </Text>
+            </div>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <Button
                 size="l"
                 stretched
-                onClick={() => setShowFeedbackModal(false)}
+                onClick={() => window.open('https://t.me/pavlik_ads', '_blank')}
               >
-                Закрити
+                Написати
               </Button>
             </div>
           </div>
