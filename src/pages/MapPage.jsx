@@ -497,8 +497,8 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, 
           }
           // Якщо це окремий маркер
           return (
-            <Marker key={`marker-${cluster.properties.id}`} longitude={longitude} latitude={latitude} offsetLeft={-24} offsetTop={-48}>
-              <div onClick={() => onMarkerClick(cluster.properties)} style={{cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8}}>
+            <Marker key={`marker-${cluster.properties.id}`} longitude={longitude} latitude={latitude} offsetLeft={0} offsetTop={-20}>
+              <div onClick={() => onMarkerClick(cluster.properties)} style={{cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4}}>
                 <Avatar
                   src={avatarIcon}
                   alt={cluster.properties.title}
@@ -922,28 +922,22 @@ export function MapPage() {
             Зв'язок
           </Modal.Header>
           
-          <div style={{ padding: '0 24px 24px 24px' }}>
-            <div style={{ marginBottom: 16 }}>
-              <Text style={{ lineHeight: '1.5' }}>
-                Застосунок працює в beta режимі, тому ми приймаємо будь-які скарги та пропозиції щодо його  та подальшого розвитку.
-              </Text>
-            </div>
+          <div style={{ padding: '16px 24px 24px 24px' }}>
+            <Text style={{ display: 'block', marginBottom: 16, lineHeight: '1.5' }}>
+              Якщо у вас є зауваження, проблеми в роботі або пропозиції щодо покращення, будь ласка, пишіть нам.
+            </Text>
             
-            <div style={{ marginBottom: 20 }}>
-              <Text style={{ lineHeight: '1.5' }}>
-                Також в нашому каналі «Гуляй, Київ» та на самій карті доступна реклама.
-              </Text>
-            </div>
+            <Text style={{ display: 'block', marginBottom: 20, lineHeight: '1.5' }}>
+              Також в нашому каналі «Гуляй, Київ» та на самій карті доступна реклама.
+            </Text>
             
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <Button
-                size="l"
-                stretched
-                onClick={() => window.open('https://t.me/pavlik_ads', '_blank')}
-              >
-                Написати
-              </Button>
-            </div>
+            <Button
+              size="l"
+              stretched
+              onClick={() => window.open('https://t.me/pavlik_ads', '_blank')}
+            >
+              Написати
+            </Button>
           </div>
         </Modal>
       </div>
