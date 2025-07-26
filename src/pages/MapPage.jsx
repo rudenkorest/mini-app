@@ -30,6 +30,7 @@ import {
 } from '@/lib/analytics';
 import avatarIcon from '/images/avatar-icon.png';
 import geoIcon from '/images/geo-icon.svg';
+import telegramIcon from '/images/telegram-icon.svg';
 
 function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, setShowFeedbackModal }) {
   const [viewState, setViewState] = useState({
@@ -499,7 +500,7 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, 
           return (
             <Marker key={`marker-${cluster.properties.id}`} longitude={longitude} latitude={latitude} offsetLeft={0} offsetTop={-20}>
               <div onClick={() => onMarkerClick(cluster.properties)} style={{cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4}}>
-                <Avatar
+            <Avatar
                   src={avatarIcon}
                   onError={(e) => {
                     e.target.src = avatarIcon; // Fallback при помилці завантаження
@@ -536,12 +537,12 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, 
       {/* Beta badge у верхньому лівому куті */}
       <div style={{position: 'absolute', top: 100, left: 10, zIndex: 10}}>
         <Badge mode="critical" large type='number'>Beta 1.0</Badge>
-      </div>
+          </div>
       
       {/* Індикатор завантаження */}
       {isLoading && (
-        <div style={{
-          position: 'absolute',
+          <div style={{
+            position: 'absolute',
           top: '50%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
@@ -551,8 +552,8 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, 
           boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
         }}>
           <Spinner size='m' />
-        </div>
-      )}
+          </div>
+        )}
       {/* Banner поверх карти */}
       {showBanner && (
         <div style={{position: 'absolute', bottom: 25, left: '50%', transform: 'translateX(-50%)', zIndex: 1, width: '90%', maxWidth: '90%'}}>
@@ -564,6 +565,7 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, 
             type="section"
           >
             <Button
+              before={<Image size={16} src={telegramIcon} style={{backgroundColor: 'white', borderRadius: '50%', padding: '2px'}} />}
               mode="white"
               size="s"
               onClick={() => window.open('https://t.me/+8Bui7KD5WrJiZjli', '_blank')}
@@ -909,7 +911,7 @@ export function MapPage() {
                 </Button>
               </div>
             </div>
-          </div>
+        </div>
         )}
         
         {/* Modal фідбеку з Telegram UI */}
@@ -941,7 +943,7 @@ export function MapPage() {
             >
               Написати
             </Button>
-          </div>
+        </div>
         </Modal>
       </div>
     </Page>
