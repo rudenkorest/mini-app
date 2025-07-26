@@ -501,6 +501,9 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, 
               <div onClick={() => onMarkerClick(cluster.properties)} style={{cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4}}>
                 <Avatar
                   src={avatarIcon}
+                  onError={(e) => {
+                    e.target.src = avatarIcon; // Fallback при помилці завантаження
+                  }}
                   alt={cluster.properties.title}
                   size={40}
                 />
