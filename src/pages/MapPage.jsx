@@ -40,6 +40,7 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, 
   });
   const [userLocation, setUserLocation] = useState(null);
   const [locationError, setLocationError] = useState(null);
+  const watchIdRef = useRef(null);
   const mapRef = useRef();
   const [isMobile, setIsMobile] = useState(false);
   const [locations, setLocations] = useState([]);
@@ -165,7 +166,7 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, 
     fetchLocations();
   }, []);
 
-  // Відстеження тривалості сесії
+  // Відстеження тривалості сесії та cleanup геолокації
   useEffect(() => {
     const handleBeforeUnload = () => {
       const sessionDuration = Date.now() - sessionStartTime.current;
@@ -175,6 +176,11 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, 
     window.addEventListener('beforeunload', handleBeforeUnload);
     
     return () => {
+      // Зупиняємо відстеження геолокації
+      if (watchIdRef.current) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+      
       window.removeEventListener('beforeunload', handleBeforeUnload);
       const sessionDuration = Date.now() - sessionStartTime.current;
       trackSessionDuration(sessionDuration);
@@ -225,6 +231,8 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, 
             setUserLocation({
               latitude: location.latitude,
               longitude: location.longitude,
+              accuracy: location.accuracy || 10, // Telegram API може не надавати точність
+              timestamp: Date.now()
             });
             trackMapInteraction('geolocate_success', { 
               source: 'telegram_api',
@@ -251,9 +259,10 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, 
     }
   }, []);
 
-  // Функція для використання стандартного браузерного API геолокації
+  // Функція для використання стандартного браузерного API геолокації з реальним часом
   const useBrowserGeolocation = () => {
     if (navigator.geolocation) {
+      // Спочатку отримуємо поточну позицію
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           console.log("Браузерна геолокація успішна:", pos.coords);
@@ -266,16 +275,73 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, 
           setUserLocation({
             latitude: pos.coords.latitude,
             longitude: pos.coords.longitude,
+            accuracy: pos.coords.accuracy,
+            timestamp: Date.now()
           });
         },
         (err) => {
           console.error("Помилка браузерної геолокації:", err);
-          setLocationError("Не вдалося отримати геолокацію: " + err.message);
+          // Спробуємо ще раз з базовими параметрами якщо був таймаут
+          if (err.code === err.TIMEOUT) {
+            console.log("Спробуємо з базовими параметрами геолокації...");
+            navigator.geolocation.getCurrentPosition(
+              (pos) => {
+                console.log("Базова геолокація успішна:", pos.coords);
+                setViewState(v => ({
+                  ...v,
+                  longitude: pos.coords.longitude,
+                  latitude: pos.coords.latitude,
+                  zoom: 15,
+                }));
+                setUserLocation({
+                  latitude: pos.coords.latitude,
+                  longitude: pos.coords.longitude,
+                  accuracy: pos.coords.accuracy,
+                  timestamp: Date.now()
+                });
+              },
+              () => {
+                setLocationError("Не вдалося отримати геолокацію: " + err.message);
+              },
+              { enableHighAccuracy: false, timeout: 60000, maximumAge: 300000 }
+            );
+          } else {
+            setLocationError("Не вдалося отримати геолокацію: " + err.message);
+          }
         },
         { 
-          enableHighAccuracy: true, 
-          timeout: 10000, 
-          maximumAge: 0 
+          enableHighAccuracy: false, // Вимикаємо високу точність для швидшого відповіді
+          timeout: 30000, // Збільшуємо таймаут до 30 секунд
+          maximumAge: 60000 // Дозволяємо використовувати кеш до 1 хвилини
+        }
+      );
+
+      // Тепер запускаємо постійне відстеження
+      watchIdRef.current = navigator.geolocation.watchPosition(
+        (pos) => {
+          console.log("Оновлення геолокації:", pos.coords);
+          setUserLocation(prevLocation => {
+            // Оновлюємо тільки якщо нова позиція точніша або минуло достатньо часу
+            if (!prevLocation || 
+                pos.coords.accuracy < prevLocation.accuracy ||
+                Date.now() - prevLocation.timestamp > 5000) {
+              return {
+                latitude: pos.coords.latitude,
+                longitude: pos.coords.longitude,
+                accuracy: pos.coords.accuracy,
+                timestamp: Date.now()
+              };
+            }
+            return prevLocation;
+          });
+        },
+        (err) => {
+          console.error("Помилка відстеження геолокації:", err);
+        },
+        { 
+          enableHighAccuracy: false, // Швидший відгук
+          maximumAge: 60000, // 1 хвилина кешу
+          timeout: 20000 // 20 секунд для watchPosition
         }
       );
     } else {
@@ -383,6 +449,8 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, 
             setUserLocation({
               latitude: location.latitude,
               longitude: location.longitude,
+              accuracy: location.accuracy || 10, // Telegram API може не надавати точність
+              timestamp: Date.now()
             });
             trackMapInteraction('geolocate_success', { 
               source: 'telegram_api',
@@ -421,6 +489,8 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, 
           setUserLocation({
             latitude: pos.coords.latitude,
             longitude: pos.coords.longitude,
+            accuracy: pos.coords.accuracy,
+            timestamp: Date.now()
           });
           trackMapInteraction('geolocate_success', { 
             source: 'browser_api',
@@ -433,9 +503,9 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, 
           trackError('Browser Geolocation', err.message);
         },
         { 
-          enableHighAccuracy: true, 
-          timeout: 10000, 
-          maximumAge: 0 
+          enableHighAccuracy: false, // Швидший відгук для кнопки
+          timeout: 30000, // 30 секунд таймаут
+          maximumAge: 60000 // 1 хвилина кешу
         }
       );
     } else {
@@ -513,24 +583,45 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, 
             </Marker>
           );
         })}
-        {/* Маркер користувача (синя точка) */}
+        {/* Маркер користувача (синя точка з індикатором точності) */}
         {userLocation && (
           <Marker
             longitude={userLocation.longitude}
             latitude={userLocation.latitude}
-            offsetLeft={-12}
-            offsetTop={-12}
+            offsetLeft={-15}
+            offsetTop={-15}
           >
-            <div
-              style={{
-                width: 18,
-                height: 18,
-                borderRadius: '50%',
-                background: 'rgba(0, 120, 255, 1)',
-                border: '2px solid #fff',
-                boxShadow: '0 0 8px 2px rgba(0,120,255,0.5)'
-              }}
-            />
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+              {/* Кільце точності */}
+              {userLocation.accuracy && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    width: Math.min(userLocation.accuracy / 2, 80), // Обмежуємо максимальний розмір
+                    height: Math.min(userLocation.accuracy / 2, 80),
+                    borderRadius: '50%',
+                    background: 'rgba(0, 120, 255, 0.1)',
+                    border: '1px solid rgba(0, 120, 255, 0.3)',
+                    zIndex: 1001
+                  }}
+                />
+              )}
+              {/* Основна точка користувача */}
+              <div
+                style={{
+                  width: 20,
+                  height: 20,
+                  borderRadius: '50%',
+                  background: 'rgba(0, 120, 255, 1)',
+                  border: '3px solid #fff',
+                  boxShadow: '0 0 12px 3px rgba(0,120,255,0.4)',
+                  zIndex: 1002,
+                  position: 'relative',
+                  animation: 'pulse 2s infinite'
+                }}
+              />
+              
+            </div>
           </Marker>
         )}
       </Map>
