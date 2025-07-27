@@ -324,7 +324,7 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, 
             // Оновлюємо тільки якщо нова позиція точніша або минуло достатньо часу
             if (!prevLocation || 
                 pos.coords.accuracy < prevLocation.accuracy ||
-                Date.now() - prevLocation.timestamp > 5000) {
+                Date.now() - prevLocation.timestamp > 3000) {
               return {
                 latitude: pos.coords.latitude,
                 longitude: pos.coords.longitude,
