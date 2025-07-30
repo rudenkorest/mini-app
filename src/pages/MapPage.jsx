@@ -660,6 +660,7 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, 
               mode="white"
               size="s"
               onClick={() => window.open('https://t.me/+8Bui7KD5WrJiZjli', '_blank')}
+              style={{color: '#000000', textDecoration: 'none'}}
             >
               Детальніше
             </Button>
@@ -947,6 +948,7 @@ export function MapPage() {
                   size="s"
                   onClick={handleDetailsClick}
                   loading={isCheckingSubscription}
+                  style={{color: '#000000', textDecoration: 'none'}}
                 >
                   Детальніше
                 </Button>
