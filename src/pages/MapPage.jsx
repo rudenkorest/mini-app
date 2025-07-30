@@ -597,8 +597,8 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, 
                 <div
                   style={{
                     position: 'absolute',
-                    width: Math.min(userLocation.accuracy / 2, 80), // Обмежуємо максимальний розмір
-                    height: Math.min(userLocation.accuracy / 2, 80),
+                    width: Math.min(userLocation.accuracy / 2, 100), // Обмежуємо максимальний розмір
+                    height: Math.min(userLocation.accuracy / 2, 100),
                     borderRadius: '50%',
                     background: 'rgba(0, 120, 255, 0.1)',
                     border: '1px solid rgba(0, 120, 255, 0.3)',
@@ -977,28 +977,46 @@ export function MapPage() {
               maxWidth: 340,
               width: '100%',
               boxShadow: '0 4px 24px rgba(0, 0, 0, 0.15)',
+              position: 'relative'
             }}>
-              <Headline weight="2" style={{ marginBottom: 12, textAlign: 'center' }}>
-                Підпишіться на канал
-              </Headline>
-              <Text style={{ marginBottom: 20, textAlign: 'center', color: '#666' }}>
-                Щоб отримати доступ до детальної інформації, підпишіться на наш Telegram канал
+              {/* Верхня частина з заголовком та хрестиком */}
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                position: 'relative',
+                marginBottom: 16 
+              }}>
+                <Headline weight="2" style={{ color: '#666'}}>
+                  Підписка
+                </Headline>
+                <Button 
+                  mode="bezeled" 
+                  size="s" 
+                  onClick={() => setShowSubscribeModal(false)}
+                  style={{
+                    position: 'absolute',
+                    right: 0,
+                    width: 32,
+                    height: 32,
+                    minWidth: 32,
+                    padding: 0
+                  }}
+                >
+                  ✕
+                </Button>
+              </div>
+              
+              <Text style={{ marginBottom: 20, textAlign: 'center', color: '#000' }}>
+                Щоб отримати доступ до публікації з детальною інформацією про заклад, підпишіться на наш Telegram канал.
               </Text>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 20 }}>
                 <Button
                   size="l"
                   stretched
                   onClick={handleSubscribeClick}
                 >
                   Підписатися на канал
-                </Button>
-                <Button
-                  mode="bezeled"
-                  size="l"
-                  stretched
-                  onClick={() => setShowSubscribeModal(false)}
-                >
-                  Закрити
                 </Button>
               </div>
             </div>

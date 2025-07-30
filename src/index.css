@@ -4,6 +4,13 @@ body {
   margin: 0;
 }
 
+/* Фікс для кольору тексту кнопок на мобільних пристроях */
+.tgui--button--mode--white,
+.tgui--button--mode--white * {
+  color: #000000 !important;
+  text-decoration: none !important;
+}
+
 /* Анімація для маркера користувача */
 @keyframes pulse {
   0% {
