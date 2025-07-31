@@ -937,7 +937,12 @@ export function MapPage() {
               <Banner
                 before={<Image size={48} src={avatarIcon} />}
                 callout={selectedLocation.address || "Київ"}
-                background={<img alt="Location background" src={selectedLocation.avatar} style={{width: '100%', height: '100%', opacity: 0.5, objectFit: "cover"}}/>}
+                background={
+                  <div style={{position: 'relative', width: '100%', height: '100%'}}>
+                    <img alt="Location background" src={selectedLocation.avatar} style={{width: '100%', height: '100%', opacity: 1, objectFit: "cover"}}/>
+                    <div style={{position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0, 0, 0, 0.5)'}}></div>
+                  </div>
+                }
                 header={selectedLocation.title}
                 subheader={selectedLocation.description || "Опис локації"}
                 type="section"
