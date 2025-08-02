@@ -649,7 +649,12 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, 
       {showBanner && (
         <div style={{position: 'absolute', bottom: 25, left: '50%', transform: 'translateX(-50%)', zIndex: 1, width: '90%', maxWidth: '90%'}}>
           <Banner
-            background={<img alt="Nasa streams" src="https://www.nasa.gov/wp-content/uploads/2023/10/streams.jpg?resize=1536,864" style={{width: '150%'}}/>}
+            background={
+              <div style={{position: 'relative', width: '100%', height: '100%'}}>
+                <img alt="Gulyai Kyiv Map" src="https://tkvtshoprhmgjrgvaeia.supabase.co/storage/v1/object/public/location-images/system%20images/Frame%201686561271.png" style={{width: '100%', height: '100%', objectFit: "cover"}}/>
+                <div style={{position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0, 0, 0, 0.3)'}}></div>
+              </div>
+            }
             header="Трендові місця поруч з собою!"
             subheader="Інтерактивна карта від медіа «Гуляй, Київ». Досліджуй місто з нами. "
             onCloseIcon={onCloseBanner}
