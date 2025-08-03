@@ -31,7 +31,6 @@ import {
 import avatarIcon from '/images/avatar-icon.png';
 import geoIcon from '/images/geo-icon.svg';
 import telegramIcon from '/images/telegram-icon.svg';
-import logoCenter from '/images/logo_center.png';
 
 function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, setShowFeedbackModal }) {
   const [viewState, setViewState] = useState({
@@ -626,29 +625,6 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, 
           </Marker>
         )}
       </Map>
-      {/* Логотип по центру карти в верхній частині */}
-      <div style={{
-        position: 'absolute', 
-        top: '10%', 
-        left: '50%', 
-        transform: 'translateX(-50%)', 
-        zIndex: 10,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 8
-      }}>
-        <img 
-          src={logoCenter} 
-          alt="Гуляй, Київ" 
-          style={{
-            height: '40px',
-            width: 'auto',
-            filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.4))'
-          }}
-        />
-      </div>
-      
       {/* Beta badge у верхньому лівому куті */}
       <div style={{position: 'absolute', top: 100, left: 10, zIndex: 10}}>
         <Badge mode="critical" large type='number'>Beta 1.0</Badge>
@@ -1060,10 +1036,12 @@ export function MapPage() {
         )}
         
         {/* Modal фідбеку з Telegram UI */}
-        <Modal
-          open={showFeedbackModal}
-          onOpenChange={setShowFeedbackModal}
-        >
+        <div style={{ zIndex: 99999, position: 'relative' }}>
+          <Modal
+            open={showFeedbackModal}
+            onOpenChange={setShowFeedbackModal}
+            style={{ zIndex: 99999 }}
+          >
           <Modal.Header after={
             <Button mode="bezeled" size="s" onClick={() => setShowFeedbackModal(false)}>
               ✕
@@ -1089,7 +1067,8 @@ export function MapPage() {
               Написати
             </Button>
         </div>
-        </Modal>
+          </Modal>
+        </div>
       </div>
     </Page>
   );
