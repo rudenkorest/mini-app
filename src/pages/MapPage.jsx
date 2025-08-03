@@ -31,6 +31,7 @@ import {
 import avatarIcon from '/images/avatar-icon.png';
 import geoIcon from '/images/geo-icon.svg';
 import telegramIcon from '/images/telegram-icon.svg';
+import logoCenter from '/images/logo_center.png';
 
 function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, setShowFeedbackModal }) {
   const [viewState, setViewState] = useState({
@@ -525,7 +526,7 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, 
         ref={mapRef}
         {...viewState}
         style={{width: '100%', height: '100%'}}
-        mapStyle="mapbox://styles/mapbox/streets-v11"
+        mapStyle="mapbox://styles/rudenkorest/cmdvm0gzx003601r59e2i3kbi" // Ваш кастомний стиль
         mapboxAccessToken={import.meta.env.VITE_MAPBOX_TOKEN}
         onMove={evt => setViewState(evt.viewState)}
         dragRotate={false}
@@ -625,6 +626,29 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, 
           </Marker>
         )}
       </Map>
+      {/* Логотип по центру карти в верхній частині */}
+      <div style={{
+        position: 'absolute', 
+        top: '10%', 
+        left: '50%', 
+        transform: 'translateX(-50%)', 
+        zIndex: 10,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 8
+      }}>
+        <img 
+          src={logoCenter} 
+          alt="Гуляй, Київ" 
+          style={{
+            height: '40px',
+            width: 'auto',
+            filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.4))'
+          }}
+        />
+      </div>
+      
       {/* Beta badge у верхньому лівому куті */}
       <div style={{position: 'absolute', top: 100, left: 10, zIndex: 10}}>
         <Badge mode="critical" large type='number'>Beta 1.0</Badge>
@@ -1050,11 +1074,11 @@ export function MapPage() {
           
           <div style={{ padding: '16px 24px 24px 24px' }}>
             <Text style={{ display: 'block', marginBottom: 16, lineHeight: '1.5' }}>
-              Якщо у вас є зауваження, проблеми в роботі або пропозиції щодо покращення, будь ласка, пишіть нам.
+              💡 Якщо у вас є зауваження, проблеми в роботі або пропозиції щодо покращення, будь ласка, – напишіть нам.
             </Text>
             
             <Text style={{ display: 'block', marginBottom: 20, lineHeight: '1.5' }}>
-              Також в нашому каналі «Гуляй, Київ» та на самій карті доступна реклама.
+              📍 Ви також можете запропонувати власний заклад для розміщення на карті.
             </Text>
             
             <Button
