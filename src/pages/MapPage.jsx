@@ -752,9 +752,7 @@ export function MapPage() {
   // Канал, на який потрібно підписатися
   const TELEGRAM_CHANNEL = '-1001968388006'; // Chat ID вашого приватного каналу
   const TELEGRAM_CHANNEL_URL = 'https://t.me/+8Bui7KD5WrJiZjli'; // Замініть на invite link вашого каналу
-  const BACKEND_URL = process.env.NODE_ENV === 'production' 
-    ? 'https://mini-app-backend-production-826a.up.railway.app' // Railway URL
-    : 'http://localhost:3001';
+  const BACKEND_URL = 'https://mini-app-backend-production-cb1d.up.railway.app';
   
   const handleMarkerClick = (locationData) => {
     setSelectedLocation(locationData);
