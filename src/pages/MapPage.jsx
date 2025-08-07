@@ -31,6 +31,7 @@ import {
 import avatarIcon from '/images/avatar-icon.png';
 import geoIcon from '/images/geo-icon.svg';
 import telegramIcon from '/images/telegram-icon.svg';
+import { useUTMAnalytics } from '@/hooks/useUTMAnalytics.js';
 
 function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, setShowFeedbackModal }) {
   const [viewState, setViewState] = useState({
