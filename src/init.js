@@ -7,6 +7,7 @@ import {
     $debug,
     init as initSDK,
 } from '@telegram-apps/sdk-react';
+import { initUTMAnalytics } from '@/lib/utm-analytics.js';
 
 /**
  * Initializes the application and configures its dependencies.
@@ -32,6 +33,12 @@ export function init(debug) {
     viewport.bindCssVars();
     miniApp.bindCssVars();
     themeParams.bindCssVars();
+
+    // Initialize UTM Analytics
+    // Затримка для забезпечення завантаження gtag
+    setTimeout(() => {
+        initUTMAnalytics();
+    }, 1000);
 
     // Add Eruda if needed.
     debug && import('eruda')
