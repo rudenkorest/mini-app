@@ -202,7 +202,19 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, 
         setLocations([]); // Якщо помилка - показуємо пусту карту
       } else {
         setLocations(data || []);
-        trackMapInteraction('locations_loaded', { count: data?.length || 0 });
+        
+        // Логування локацій з кастомними іконками
+        const customIconLocations = data?.filter(loc => loc.marker_icon_url) || [];
+        if (customIconLocations.length > 0) {
+          console.log(`📍 Завантажено ${customIconLocations.length} локацій з кастомними іконками:`, 
+            customIconLocations.map(loc => ({ id: loc.id, title: loc.title, icon: loc.marker_icon_url }))
+          );
+        }
+        
+        trackMapInteraction('locations_loaded', { 
+          count: data?.length || 0,
+          customIconCount: customIconLocations.length 
+        });
       }
     } catch (error) {
       console.error('Помилка при завантаженні локацій:', error);
@@ -360,7 +372,9 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, 
       avatar: location.avatar,
       description: location.description,
       address: location.address,
-      link: location.link // Додаємо посилання з бази даних
+      link: location.link, // Додаємо посилання з бази даних
+      highlight: location.highlight || false, // Додаємо параметр highlight
+      markerIconUrl: location.marker_icon_url || null // Додаємо кастомну іконку маркера
     },
     geometry: { 
       type: "Point", 
@@ -522,6 +536,64 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, 
       overflow: 'hidden',
       position: 'relative',
     }}>
+      <style>{`
+        @keyframes gradientShift {
+          0%, 100% {
+            background: linear-gradient(90deg, #D9F7A0 0%, #7FC99E 35%, #43ACB7 70%, #7FC99E 100%);
+            background-size: 200% 200%;
+            background-position: 0% 50%;
+          }
+          50% {
+            background: linear-gradient(90deg, #D9F7A0 0%, #7FC99E 35%, #43ACB7 70%, #7FC99E 100%);
+            background-size: 200% 200%;
+            background-position: 100% 50%;
+          }
+        }
+        
+        @keyframes gentlePulse {
+          0%, 100% {
+            transform: scale(1);
+            opacity: 1;
+          }
+          50% {
+            transform: scale(1.05);
+            opacity: 0.9;
+          }
+        }
+        
+        @keyframes shimmer {
+          0% {
+            box-shadow: 
+              0 0 10px rgba(217, 247, 160, 0.3),
+              0 0 20px rgba(67, 172, 183, 0.2),
+              inset 0 0 10px rgba(217, 247, 160, 0.1);
+          }
+          50% {
+            box-shadow: 
+              0 0 15px rgba(217, 247, 160, 0.5),
+              0 0 30px rgba(67, 172, 183, 0.3),
+              inset 0 0 15px rgba(67, 172, 183, 0.2);
+          }
+          100% {
+            box-shadow: 
+              0 0 10px rgba(217, 247, 160, 0.3),
+              0 0 20px rgba(67, 172, 183, 0.2),
+              inset 0 0 10px rgba(217, 247, 160, 0.1);
+          }
+        }
+        
+        @keyframes pulse {
+          0% {
+            box-shadow: 0 0 12px 3px rgba(0,120,255,0.4);
+          }
+          50% {
+            box-shadow: 0 0 20px 5px rgba(0,120,255,0.6);
+          }
+          100% {
+            box-shadow: 0 0 12px 3px rgba(0,120,255,0.4);
+          }
+        }
+      `}</style>
       <Map
         ref={mapRef}
         {...viewState}
@@ -571,14 +643,36 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, 
           return (
             <Marker key={`marker-${cluster.properties.id}`} longitude={longitude} latitude={latitude} offsetLeft={0} offsetTop={-20}>
               <div onClick={() => onMarkerClick(cluster.properties)} style={{cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4}}>
-            <Avatar
-                  src={avatarIcon}
-                  onError={(e) => {
-                    e.target.src = avatarIcon; // Fallback при помилці завантаження
-                  }}
-                  alt={cluster.properties.title}
-                  size={40}
-                />
+                <div style={{
+                  position: 'relative',
+                  display: 'inline-block',
+                  ...(cluster.properties.highlight ? {
+                    padding: 4,
+                    background: 'linear-gradient(90deg, #D9F7A0 0%, #7FC99E 35%, #43ACB7 70%, #7FC99E 100%)',
+                    backgroundSize: '200% 200%',
+                    borderRadius: '50%',
+                    animation: 'gradientShift 4s ease-in-out infinite, shimmer 4s ease-in-out infinite',
+                    boxShadow: '0 0 15px rgba(67, 172, 183, 0.4)',
+                  } : {})
+                }}>
+                  <Avatar
+                    src={cluster.properties.markerIconUrl || avatarIcon}
+                    onError={(e) => {
+                      // Якщо кастомна іконка не завантажилась, використовуємо стандартну
+                      if (e.target.src !== avatarIcon) {
+                        console.log(`Failed to load custom icon for ${cluster.properties.title}, falling back to default`);
+                        e.target.src = avatarIcon;
+                      }
+                    }}
+                    alt={cluster.properties.title}
+                    size={40}
+                    style={{
+                      ...(cluster.properties.highlight ? {
+                        border: '2px solid white',
+                      } : {})
+                    }}
+                  />
+                </div>
                 <Caption caps level="1" weight="2" style={{ color: '#000' }}>{cluster.properties.title}</Caption>
               </div>
             </Marker>
@@ -628,7 +722,7 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, 
       </Map>
       {/* Beta badge у верхньому лівому куті */}
       <div style={{position: 'absolute', top: 100, left: 10, zIndex: 10}}>
-        <Badge mode="critical" large type='number'>Beta 1.0</Badge>
+        <Badge mode="critical" large type='number'>Beta 1.1</Badge>
           </div>
       
       {/* Індикатор завантаження */}
@@ -665,7 +759,7 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, 
               before={<Image size={16} src={telegramIcon} style={{backgroundColor: 'white', borderRadius: '50%', padding: '2px'}} />}
               mode="white"
               size="s"
-              onClick={() => window.open('https://t.me/+8Bui7KD5WrJiZjli', '_blank')}
+              onClick={() => window.open('https://t.me/c/1968388006/6308', '_blank')}
               style={{color: '#000000', textDecoration: 'none'}}
             >
               Детальніше
@@ -759,6 +853,15 @@ export function MapPage() {
     setSelectedLocation(locationData);
     setShowTonBanner(true);
     trackMarkerClick(locationData.id, locationData.title);
+    
+    // Логування для виділених локацій
+    if (locationData.highlight) {
+      console.log('🌟 Клік по виділеній локації:', locationData.title);
+      trackMapInteraction('highlighted_marker_clicked', { 
+        locationId: locationData.id,
+        locationTitle: locationData.title 
+      });
+    }
   };
 
   // Універсальна функція для відкриття посилань
