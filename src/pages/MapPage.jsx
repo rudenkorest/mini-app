@@ -874,33 +874,19 @@ export function MapPage() {
     if (url.includes('t.me/')) {
       // Отримуємо інформацію про поточний контекст мініапки
       const tg = window.Telegram?.WebApp;
-      const startParam = tg?.initDataUnsafe?.start_param;
       
       // Перевіряємо, чи мініапка відкрита з каналу/чату
-      // і чи посилання веде на той самий канал
       const isFromChannel = tg?.initDataUnsafe?.chat_instance || 
                            tg?.initDataUnsafe?.chat?.id;
       
-      // Якщо посилання веде на канал і мініапка відкрита з каналу,
-      // спочатку закриваємо мініапку, потім відкриваємо посилання
-      if (isFromChannel && url.includes('t.me/')) {
-        // Використовуємо setTimeout для затримки, щоб дати час на закриття
+      // Спеціальна обробка для посилань на той самий канал
+      if (isFromChannel) {
+        // Використовуємо openTelegramLink, який автоматично згортає мініапку
         if (window.Telegram?.WebApp?.openTelegramLink) {
-          // Спочатку відкриваємо посилання
           window.Telegram.WebApp.openTelegramLink(url);
-          // Потім закриваємо мініапку з невеликою затримкою
-          setTimeout(() => {
-            if (window.Telegram?.WebApp?.close) {
-              window.Telegram.WebApp.close();
-            }
-          }, 100);
         } else if (window.Telegram?.WebApp?.openLink) {
+          // Fallback на openLink
           window.Telegram.WebApp.openLink(url);
-          setTimeout(() => {
-            if (window.Telegram?.WebApp?.close) {
-              window.Telegram.WebApp.close();
-            }
-          }, 100);
         } else {
           window.open(url, '_blank');
         }
