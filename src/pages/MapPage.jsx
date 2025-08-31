@@ -870,22 +870,33 @@ export function MapPage() {
   const openLink = (url) => {
     if (!url) return;
     
-    // Перевіряємо чи це Telegram посилання
     if (url.includes('t.me/')) {
-      // Для Telegram посилань використовуємо openTelegramLink для плавного переходу
-      if (window.Telegram?.WebApp?.openTelegramLink) {
-        window.Telegram.WebApp.openTelegramLink(url);
-      } else if (window.Telegram?.WebApp?.openLink) {
-        window.Telegram.WebApp.openLink(url);
+      const tg = window.Telegram?.WebApp;
+      
+      // Детекція контексту
+      const isFromChannel = tg?.initDataUnsafe?.chat_instance || 
+                           tg?.initDataUnsafe?.chat?.id;
+      const currentChannelUsername = tg?.initDataUnsafe?.chat?.username;
+      const currentChannelId = tg?.initDataUnsafe?.chat?.id;
+      
+      // Перевірка "того ж каналу"
+      const isSameChannel = (currentChannelUsername && url.includes(currentChannelUsername)) ||
+                           (currentChannelId && url.includes(`c/${Math.abs(currentChannelId)}`));
+      
+      // КЛЮЧОВЕ РІШЕННЯ: для того ж каналу - згортаємо мініапку
+      if (isFromChannel && isSameChannel) {
+        // Відкриваємо посилання
+        tg.openTelegramLink(url);
+        
+        // Згортаємо мініапку через expand(false) або альтернативні методи
+        setTimeout(() => {
+          if (tg?.expand) {
+            tg.expand(false);
+          }
+        }, 100);
       } else {
-        window.open(url, '_blank');
-      }
-    } else {
-      // Для зовнішніх посилань використовуємо openLink
-      if (window.Telegram?.WebApp?.openLink) {
-        window.Telegram.WebApp.openLink(url);
-      } else {
-        window.open(url, '_blank');
+        // Стандартна поведінка
+        tg.openTelegramLink(url);
       }
     }
   };
