@@ -870,13 +870,47 @@ export function MapPage() {
     
     // Перевіряємо чи це Telegram посилання
     if (url.includes('t.me/')) {
-      // Для Telegram посилань використовуємо openTelegramLink для плавного переходу
-      if (window.Telegram?.WebApp?.openTelegramLink) {
-        window.Telegram.WebApp.openTelegramLink(url);
-      } else if (window.Telegram?.WebApp?.openLink) {
-        window.Telegram.WebApp.openLink(url);
+      // Отримуємо інформацію про поточний контекст мініапки
+      const tg = window.Telegram?.WebApp;
+      const startParam = tg?.initDataUnsafe?.start_param;
+      
+      // Перевіряємо, чи мініапка відкрита з каналу/чату
+      // і чи посилання веде на той самий канал
+      const isFromChannel = tg?.initDataUnsafe?.chat_instance || 
+                           tg?.initDataUnsafe?.chat?.id;
+      
+      // Якщо посилання веде на канал і мініапка відкрита з каналу,
+      // спочатку закриваємо мініапку, потім відкриваємо посилання
+      if (isFromChannel && url.includes('t.me/')) {
+        // Використовуємо setTimeout для затримки, щоб дати час на закриття
+        if (window.Telegram?.WebApp?.openTelegramLink) {
+          // Спочатку відкриваємо посилання
+          window.Telegram.WebApp.openTelegramLink(url);
+          // Потім закриваємо мініапку з невеликою затримкою
+          setTimeout(() => {
+            if (window.Telegram?.WebApp?.close) {
+              window.Telegram.WebApp.close();
+            }
+          }, 100);
+        } else if (window.Telegram?.WebApp?.openLink) {
+          window.Telegram.WebApp.openLink(url);
+          setTimeout(() => {
+            if (window.Telegram?.WebApp?.close) {
+              window.Telegram.WebApp.close();
+            }
+          }, 100);
+        } else {
+          window.open(url, '_blank');
+        }
       } else {
-        window.open(url, '_blank');
+        // Стандартна поведінка для інших випадків
+        if (window.Telegram?.WebApp?.openTelegramLink) {
+          window.Telegram.WebApp.openTelegramLink(url);
+        } else if (window.Telegram?.WebApp?.openLink) {
+          window.Telegram.WebApp.openLink(url);
+        } else {
+          window.open(url, '_blank');
+        }
       }
     } else {
       // Для зовнішніх посилань використовуємо openLink
