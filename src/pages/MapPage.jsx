@@ -899,81 +899,25 @@ export function MapPage() {
       
       // Якщо це посилання на той самий канал, з якого відкрита мініапка
       if (isFromChannel && isSameChannel) {
-        console.log('Opening link to the same channel, will try to minimize app');
+        console.log('Same channel detected - post will open in background, mini app should minimize');
         
-        // Намагаємось "натякнути" системі згорнути мініапку через різні методи
-        const tg = window.Telegram?.WebApp;
-        
-        // Метод 1: Використовуємо enableVerticalSwipes + expand(false)
-        if (tg?.enableVerticalSwipes) {
-          tg.enableVerticalSwipes();
+        // Відкриваємо посилання стандартним способом
+        if (window.Telegram?.WebApp?.openTelegramLink) {
+          window.Telegram.WebApp.openTelegramLink(url);
+        } else if (window.Telegram?.WebApp?.openLink) {
+          window.Telegram.WebApp.openLink(url);
+        } else {
+          window.open(url, '_blank');
         }
         
-        // Метод 2: Спочатку розгортаємо, потім згортаємо
-        if (tg?.expand) {
-          tg.expand(true);  // Розгортаємо
-          setTimeout(() => {
-            tg.expand(false);  // Згортаємо
-          }, 50);
-        }
-        
-        // Метод 3: Використовуємо HapticFeedback для симуляції взаємодії
-        if (tg?.HapticFeedback?.impactOccurred) {
-          tg.HapticFeedback.impactOccurred('light');
-        }
-        
-        // Метод 4: Спробуємо симулювати жест згортання через подію
-        try {
-          // Створюємо подію дотику, яка може спрацювати як свайп вниз
-          const touchEvent = new TouchEvent('touchstart', {
-            touches: [new Touch({
-              identifier: 1,
-              target: document.body,
-              clientX: window.innerWidth / 2,
-              clientY: 50  // Верхня частина екрану (заголовок)
-            })]
-          });
-          document.body.dispatchEvent(touchEvent);
-          
-          setTimeout(() => {
-            const touchEndEvent = new TouchEvent('touchend', {
-              changedTouches: [new Touch({
-                identifier: 1,
-                target: document.body,
-                clientX: window.innerWidth / 2,
-                clientY: 200  // Рух вниз
-              })]
-            });
-            document.body.dispatchEvent(touchEndEvent);
-          }, 10);
-        } catch (e) {
-          console.log('Touch simulation failed:', e);
-        }
-        
-        // Відкриваємо посилання з більшою затримкою
+        // Простий підхід: намагаємось згорнути мініапку після короткої затримки
         setTimeout(() => {
-          if (window.Telegram?.WebApp?.openTelegramLink) {
-            window.Telegram.WebApp.openTelegramLink(url);
-            
-            // Після відкриття посилання намагаємось ще раз згорнути
-            setTimeout(() => {
-              if (tg?.expand) {
-                tg.expand(false);
-              }
-              // Додатково спробуємо викликати подію, яка може згорнути мініапку
-              if (tg?.MainButton?.hide) {
-                tg.MainButton.hide();
-              }
-              if (tg?.BackButton?.hide) {
-                tg.BackButton.hide();
-              }
-            }, 100);
-          } else if (window.Telegram?.WebApp?.openLink) {
-            window.Telegram.WebApp.openLink(url);
-          } else {
-            window.open(url, '_blank');
+          const tg = window.Telegram?.WebApp;
+          if (tg?.expand) {
+            console.log('Attempting to minimize mini app...');
+            tg.expand(false);
           }
-        }, 200);
+        }, 300);
       } else if (isFromChannel) {
         // Для посилань на інші канали з мініапки, відкритої з каналу
         // Також намагаємось згорнути перед відкриттям
