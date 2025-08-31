@@ -897,25 +897,40 @@ export function MapPage() {
       
       // Якщо це посилання на той самий канал, з якого відкрита мініапка
       if (isFromChannel && isSameChannel) {
-        console.log('Same channel detected - post will open in background, mini app should minimize');
+        console.log('Same channel detected - trying alternative navigation methods');
         
-        // Відкриваємо посилання стандартним способом
-        if (window.Telegram?.WebApp?.openTelegramLink) {
-          window.Telegram.WebApp.openTelegramLink(url);
-        } else if (window.Telegram?.WebApp?.openLink) {
-          window.Telegram.WebApp.openLink(url);
-        } else {
-          window.open(url, '_blank');
+        // Для того ж каналу пробуємо різні методи навігації
+        
+        // Метод 1: Прямий перехід через location.href
+        try {
+          console.log('Trying window.location.href for same channel');
+          window.location.href = url;
+          return;
+        } catch (e) {
+          console.log('location.href failed:', e);
         }
         
-        // Простий підхід: намагаємось згорнути мініапку після короткої затримки
-        setTimeout(() => {
-          const tg = window.Telegram?.WebApp;
-          if (tg?.expand) {
-            console.log('Attempting to minimize mini app...');
-            tg.expand(false);
+        // Метод 2: window.open з _blank 
+        try {
+          console.log('Trying window.open with _blank for same channel');
+          window.open(url, '_blank');
+          return;
+        } catch (e) {
+          console.log('window.open failed:', e);
+        }
+        
+        // Метод 3: Fallback на Telegram API (але НЕ openTelegramLink)
+        try {
+          console.log('Trying WebApp.openLink for same channel');
+          if (window.Telegram?.WebApp?.openLink) {
+            window.Telegram.WebApp.openLink(url);
+          } else {
+            window.Telegram.WebApp.openTelegramLink(url);
           }
-        }, 300);
+        } catch (e) {
+          console.log('All methods failed, using standard fallback');
+          window.open(url, '_blank');
+        }
       } else if (isFromChannel) {
         // Для посилань на інші канали з мініапки, відкритої з каналу
         // Також намагаємось згорнути перед відкриттям
