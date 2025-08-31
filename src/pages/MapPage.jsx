@@ -872,20 +872,64 @@ export function MapPage() {
     
     // Перевіряємо чи це Telegram посилання
     if (url.includes('t.me/')) {
-      // Отримуємо інформацію про поточний контекст мініапки
       const tg = window.Telegram?.WebApp;
       
       // Перевіряємо, чи мініапка відкрита з каналу/чату
       const isFromChannel = tg?.initDataUnsafe?.chat_instance || 
                            tg?.initDataUnsafe?.chat?.id;
       
-      // Спеціальна обробка для посилань на той самий канал
-      if (isFromChannel) {
-        // Використовуємо openTelegramLink, який автоматично згортає мініапку
+      // Отримуємо username або ID поточного каналу
+      const currentChannelUsername = tg?.initDataUnsafe?.chat?.username;
+      const currentChannelId = tg?.initDataUnsafe?.chat?.id;
+      
+      // Перевіряємо, чи посилання веде на той самий канал
+      // Враховуємо різні формати посилань: username, приватні канали, пости
+      const isSameChannel = (currentChannelUsername && url.includes(currentChannelUsername)) ||
+                           (currentChannelId && url.includes(`c/${Math.abs(currentChannelId)}`));
+      
+      // Діагностичний вивід для відлагодження
+      console.log('Link debug:', {
+        url,
+        isFromChannel,
+        currentChannelUsername,
+        currentChannelId,
+        isSameChannel,
+        hasExpand: !!window.Telegram?.WebApp?.expand
+      });
+      
+      // Якщо це посилання на той самий канал, з якого відкрита мініапка
+      if (isFromChannel && isSameChannel) {
+        console.log('Opening link to the same channel, will minimize app');
+        
+        // Спочатку згортаємо мініапку
+        if (window.Telegram?.WebApp?.isExpanded && window.Telegram?.WebApp?.expand) {
+          // Згортаємо мініапку перед відкриттям посилання
+          window.Telegram.WebApp.expand(false);
+        }
+        
+        // Потім відкриваємо посилання з невеликою затримкою
+        setTimeout(() => {
+          if (window.Telegram?.WebApp?.openTelegramLink) {
+            window.Telegram.WebApp.openTelegramLink(url);
+          } else if (window.Telegram?.WebApp?.openLink) {
+            window.Telegram.WebApp.openLink(url);
+          } else {
+            window.open(url, '_blank');
+          }
+        }, 150);
+      } else if (isFromChannel) {
+        // Для посилань на інші канали з мініапки, відкритої з каналу
+        // Також намагаємось згорнути перед відкриттям
         if (window.Telegram?.WebApp?.openTelegramLink) {
           window.Telegram.WebApp.openTelegramLink(url);
+          
+          // Додатково згортаємо для надійності
+          setTimeout(() => {
+            if (window.Telegram?.WebApp?.expand) {
+              window.Telegram.WebApp.expand(false);
+            }
+          }, 100);
         } else if (window.Telegram?.WebApp?.openLink) {
-          // Fallback на openLink
           window.Telegram.WebApp.openLink(url);
         } else {
           window.open(url, '_blank');
