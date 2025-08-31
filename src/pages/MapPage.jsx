@@ -868,7 +868,6 @@ export function MapPage() {
   const openLink = (url) => {
     if (!url) return;
     
-    // Перевіряємо чи це Telegram посилання
     if (url.includes('t.me/')) {
       const tg = window.Telegram?.WebApp;
       
