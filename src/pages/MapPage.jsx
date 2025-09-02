@@ -722,7 +722,7 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, 
       </Map>
       {/* Beta badge у верхньому лівому куті */}
       <div style={{position: 'absolute', top: 100, left: 10, zIndex: 10}}>
-        <Badge mode="critical" large type='number'>Beta 1.1</Badge>
+        <Badge mode="critical" large type='number'>Beta 1.2</Badge>
           </div>
       
       {/* Індикатор завантаження */}
@@ -847,9 +847,7 @@ export function MapPage() {
   // Канал, на який потрібно підписатися
   const TELEGRAM_CHANNEL = '-1001968388006'; // Chat ID вашого приватного каналу
   const TELEGRAM_CHANNEL_URL = 'https://t.me/+8Bui7KD5WrJiZjli'; // Замініть на invite link вашого каналу
-  const BACKEND_URL = process.env.NODE_ENV === 'production' 
-    ? 'https://mini-app-backend-production-826a.up.railway.app' // Railway URL
-    : 'http://localhost:3001';
+  const BACKEND_URL = 'https://mini-app-backend-production-cb1d.up.railway.app';
   
   const handleMarkerClick = (locationData) => {
     setSelectedLocation(locationData);
@@ -870,33 +868,22 @@ export function MapPage() {
   const openLink = (url) => {
     if (!url) return;
     
+    // Перевіряємо чи це Telegram посилання
     if (url.includes('t.me/')) {
-      const tg = window.Telegram?.WebApp;
-      
-      // Детекція контексту
-      const isFromChannel = tg?.initDataUnsafe?.chat_instance || 
-                           tg?.initDataUnsafe?.chat?.id;
-      const currentChannelUsername = tg?.initDataUnsafe?.chat?.username;
-      const currentChannelId = tg?.initDataUnsafe?.chat?.id;
-      
-      // Перевірка "того ж каналу"
-      const isSameChannel = (currentChannelUsername && url.includes(currentChannelUsername)) ||
-                           (currentChannelId && url.includes(`c/${Math.abs(currentChannelId)}`));
-      
-      // КЛЮЧОВЕ РІШЕННЯ: для того ж каналу - згортаємо мініапку
-      if (isFromChannel && isSameChannel) {
-        // Відкриваємо посилання
-        tg.openTelegramLink(url);
-        
-        // Згортаємо мініапку через expand(false) або альтернативні методи
-        setTimeout(() => {
-          if (tg?.expand) {
-            tg.expand(false);
-          }
-        }, 100);
+      // Для Telegram посилань використовуємо openTelegramLink для плавного переходу
+      if (window.Telegram?.WebApp?.openTelegramLink) {
+        window.Telegram.WebApp.openTelegramLink(url);
+      } else if (window.Telegram?.WebApp?.openLink) {
+        window.Telegram.WebApp.openLink(url);
       } else {
-        // Стандартна поведінка
-        tg.openTelegramLink(url);
+        window.open(url, '_blank');
+      }
+    } else {
+      // Для зовнішніх посилань використовуємо openLink
+      if (window.Telegram?.WebApp?.openLink) {
+        window.Telegram.WebApp.openLink(url);
+      } else {
+        window.open(url, '_blank');
       }
     }
   };
