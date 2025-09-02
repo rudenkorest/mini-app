@@ -722,7 +722,7 @@ function MapStub({ showBanner, onCloseBanner, onMarkerClick, showFeedbackModal, 
       </Map>
       {/* Beta badge у верхньому лівому куті */}
       <div style={{position: 'absolute', top: 100, left: 10, zIndex: 10}}>
-        <Badge mode="critical" large type='number'>Beta 1.1</Badge>
+        <Badge mode="critical" large type='number'>Beta 1.2</Badge>
           </div>
       
       {/* Індикатор завантаження */}
@@ -868,94 +868,15 @@ export function MapPage() {
   const openLink = (url) => {
     if (!url) return;
     
+    // Перевіряємо чи це Telegram посилання
     if (url.includes('t.me/')) {
-      const tg = window.Telegram?.WebApp;
-      
-      // Перевіряємо, чи мініапка відкрита з каналу/чату
-      const isFromChannel = tg?.initDataUnsafe?.chat_instance || 
-                           tg?.initDataUnsafe?.chat?.id;
-      
-      // Отримуємо username або ID поточного каналу
-      const currentChannelUsername = tg?.initDataUnsafe?.chat?.username;
-      const currentChannelId = tg?.initDataUnsafe?.chat?.id;
-      
-      // Перевіряємо, чи посилання веде на той самий канал
-      // Враховуємо різні формати посилань: username, приватні канали, пости
-      const isSameChannel = (currentChannelUsername && url.includes(currentChannelUsername)) ||
-                           (currentChannelId && url.includes(`c/${Math.abs(currentChannelId)}`));
-      
-      // Діагностичний вивід для відлагодження
-      console.log('Link debug:', {
-        url,
-        isFromChannel,
-        currentChannelUsername,
-        currentChannelId,
-        isSameChannel,
-        hasExpand: !!window.Telegram?.WebApp?.expand
-      });
-      
-      // Якщо це посилання на той самий канал, з якого відкрита мініапка
-      if (isFromChannel && isSameChannel) {
-        console.log('Same channel detected - trying alternative navigation methods');
-        
-        // Для того ж каналу пробуємо різні методи навігації
-        
-        // Метод 1: Прямий перехід через location.href
-        try {
-          console.log('Trying window.location.href for same channel');
-          window.location.href = url;
-          return;
-        } catch (e) {
-          console.log('location.href failed:', e);
-        }
-        
-        // Метод 2: window.open з _blank 
-        try {
-          console.log('Trying window.open with _blank for same channel');
-          window.open(url, '_blank');
-          return;
-        } catch (e) {
-          console.log('window.open failed:', e);
-        }
-        
-        // Метод 3: Fallback на Telegram API (але НЕ openTelegramLink)
-        try {
-          console.log('Trying WebApp.openLink for same channel');
-          if (window.Telegram?.WebApp?.openLink) {
-            window.Telegram.WebApp.openLink(url);
-          } else {
-            window.Telegram.WebApp.openTelegramLink(url);
-          }
-        } catch (e) {
-          console.log('All methods failed, using standard fallback');
-          window.open(url, '_blank');
-        }
-      } else if (isFromChannel) {
-        // Для посилань на інші канали з мініапки, відкритої з каналу
-        // Також намагаємось згорнути перед відкриттям
-        if (window.Telegram?.WebApp?.openTelegramLink) {
-          window.Telegram.WebApp.openTelegramLink(url);
-          
-          // Додатково згортаємо для надійності
-          setTimeout(() => {
-            if (window.Telegram?.WebApp?.expand) {
-              window.Telegram.WebApp.expand(false);
-            }
-          }, 100);
-        } else if (window.Telegram?.WebApp?.openLink) {
-          window.Telegram.WebApp.openLink(url);
-        } else {
-          window.open(url, '_blank');
-        }
+      // Для Telegram посилань використовуємо openTelegramLink для плавного переходу
+      if (window.Telegram?.WebApp?.openTelegramLink) {
+        window.Telegram.WebApp.openTelegramLink(url);
+      } else if (window.Telegram?.WebApp?.openLink) {
+        window.Telegram.WebApp.openLink(url);
       } else {
-        // Стандартна поведінка для інших випадків
-        if (window.Telegram?.WebApp?.openTelegramLink) {
-          window.Telegram.WebApp.openTelegramLink(url);
-        } else if (window.Telegram?.WebApp?.openLink) {
-          window.Telegram.WebApp.openLink(url);
-        } else {
-          window.open(url, '_blank');
-        }
+        window.open(url, '_blank');
       }
     } else {
       // Для зовнішніх посилань використовуємо openLink
